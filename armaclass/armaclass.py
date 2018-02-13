@@ -49,7 +49,7 @@ class Parser:
         return self.raw[self.currentPosition:self.currentPosition + 2] == '""'
 
     def weHaveAStringLineBreak(self):
-        self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
+        return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
 
     def forwardToNextQuote(self):
         try:
