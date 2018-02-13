@@ -220,7 +220,6 @@ class Parser:
         elif current == SLASH:
             if self.next() == SLASH:
                 try:
-                    # TODO: Error in javascript here! (probably)
                     self.currentPosition = self.raw.index('\n', self.currentPosition)
                 except ValueError:
                     self.currentPosition = len(self.raw)
