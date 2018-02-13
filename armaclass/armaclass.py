@@ -43,7 +43,7 @@ class Parser:
         try:
             return self.raw[self.currentPosition]
         except IndexError:
-            return ''  # TODO: Check if should not return anything else
+            return None
 
     def weHaveADoubleQuote(self):
         return self.raw[self.currentPosition:self.currentPosition + 2] == '""'
@@ -125,7 +125,7 @@ class Parser:
             return self.parseMathExpression()
 
     def isValidVarnameChar(self, char):
-        return char in VALID_NAME_CHAR
+        return char and char in VALID_NAME_CHAR
 
     def parsePropertyName(self):
         result = self.current()
