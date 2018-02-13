@@ -3,6 +3,7 @@ import unittest
 
 from armaclass import parse
 
+
 class TestArmaClass(unittest.TestCase):
 
     def test_empty(self):
@@ -62,6 +63,13 @@ class TestArmaClass(unittest.TestCase):
         self.assertEqual(parse('// foo comment\nx=2;'), {'x': 2})
         self.assertEqual(parse('x=2;// foo comment'), {'x': 2})
         self.assertEqual(parse('class Moo { // foo comment\n};'), {'Moo': {}})
+
+    def test_multiline_comments(self):
+        self.assertEqual(parse("/* foo comment*/"), {});
+        self.assertEqual(parse("/* foo comment\nsomething */x=2;"), {'x': 2});
+        self.assertEqual(parse("x=2;/* foo comment*/"), {'x': 2});
+        self.assertEqual(parse("x/*asd*/=/**/2;/* foo comment*/"), {'x': 2});
+        self.assertEqual(parse("class Moo { /* foo comment*/};"), {'Moo': {}});
 
     def test_quote_escaping_by_double_quote(self):
         self.assertEqual(parse('foo="bar ""haha"";";\n'), {'foo': 'bar "haha";'})
@@ -178,7 +186,6 @@ class TestArmaClass(unittest.TestCase):
             };
         ''')
 
-        print(source)
         result = parse(source)
         expected = {
             'Item0': {

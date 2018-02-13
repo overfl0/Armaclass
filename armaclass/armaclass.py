@@ -11,6 +11,7 @@ SQUARE_CLOSE = ']'
 COMMA = ','
 MINUS = '-'
 SLASH = '/'
+ASTERISK = '*'
 
 VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
@@ -22,17 +23,20 @@ class Parser:
         raise RuntimeError('{} at position {}. Before: {}'.format(
             message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
 
-    def detectLineComment(self):
+    def detectComment(self):
         if self.raw[self.currentPosition:self.currentPosition + 2] == '//':
             try:
                 indexOfLinefeed = self.raw.index('\n', self.currentPosition)
                 self.currentPosition = indexOfLinefeed
             except ValueError:
                 self.currentPosition = len(self.raw)
+        elif self.raw[self.currentPosition:self.currentPosition + 2] == '/*':
+            indexCommentEnd = self.raw.find('*/', self.currentPosition)
+            self.currentPosition = len(self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
 
     def next(self):
         self.currentPosition += 1
-        self.detectLineComment()
+        self.detectComment()
         return self.current()
 
     def nextWithoutCommentDetection(self):
@@ -239,7 +243,7 @@ class Parser:
 
         result = {}
 
-        self.detectLineComment()
+        self.detectComment()
         self.parseWhitespace()
         while self.current():
             self.parseProperty(result)
