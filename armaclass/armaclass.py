@@ -24,15 +24,19 @@ class Parser:
             message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
 
     def detectComment(self):
-        if self.raw[self.currentPosition:self.currentPosition + 2] == '//':
-            try:
-                indexOfLinefeed = self.raw.index('\n', self.currentPosition)
-                self.currentPosition = indexOfLinefeed
-            except ValueError:
-                self.currentPosition = len(self.raw)
-        elif self.raw[self.currentPosition:self.currentPosition + 2] == '/*':
-            indexCommentEnd = self.raw.find('*/', self.currentPosition)
-            self.currentPosition = len(self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+        try:
+            if self.raw[self.currentPosition] == SLASH:
+                if self.raw[self.currentPosition + 1] == SLASH:
+                    try:
+                        indexOfLinefeed = self.raw.index('\n', self.currentPosition)
+                        self.currentPosition = indexOfLinefeed
+                    except ValueError:
+                        self.currentPosition = len(self.raw)
+                elif self.raw[self.currentPosition + 1] == ASTERISK:
+                    indexCommentEnd = self.raw.find('*/', self.currentPosition)
+                    self.currentPosition = len(self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+        except IndexError:
+            pass
 
     def next(self):
         self.currentPosition += 1
