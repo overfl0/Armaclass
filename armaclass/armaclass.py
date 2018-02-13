@@ -1,6 +1,8 @@
 import string
 import sys
 
+from collections import OrderedDict
+
 QUOTE = '"'
 SEMICOLON = ';'
 EQUALS = '='
@@ -143,7 +145,7 @@ class Parser:
         return result
 
     def parseClassValue(self):
-        result = {}
+        result = self.dict()
 
         self.ensure(self.current() == CURLY_OPEN)
         self.next()
@@ -240,11 +242,15 @@ class Parser:
         self.ensure(self.current() == SEMICOLON)
         self.next()
 
-    def parse(self, raw):
+    def parse(self, raw, keep_order):
         self.currentPosition = 0
         self.raw = raw
+        if keep_order:
+            self.dict = OrderedDict
+        else:
+            self.dict = dict
 
-        result = {}
+        result = self.dict()
 
         self.detectComment()
         self.parseWhitespace()
@@ -256,6 +262,6 @@ class Parser:
         return result
 
 
-def parse(raw):
+def parse(raw, *, keep_order=False):
     p = Parser()
-    return p.parse(raw)
+    return p.parse(raw, keep_order)

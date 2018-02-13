@@ -14,6 +14,10 @@ In [1]: import armaclass
 
 In [2]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };')
 Out[2]: {'Moo': {'value': 1.0}, 'version': 12.0}
+
+# Keep the values ordered as they were in the original file
+In [3]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };', keep_order=True)
+Out[3]: OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
 ```
 
 ### Notes
