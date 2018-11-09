@@ -13,21 +13,24 @@ Windows) and py2js (too slow to parse even 300KB sqm files) and decided to port 
 Python.
 
 ## Usage
+##### Parse the values from a string
 ```python
 In [1]: import armaclass
 
 In [2]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };')
 Out[2]: {'Moo': {'value': 1.0}, 'version': 12.0}
+```
 
-# Keep the values ordered as they were in the original file
+##### Keep the values ordered as they were in the original file
+```python
 In [3]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };', keep_order=True)
 Out[3]: OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
+```
 
-# Generate the files based on a parsed (or manually created) structure
+##### Generate the files based on a parsed (or manually created) structure
+```python
 In [4]: from collections import OrderedDict
-
 In [5]: structure = OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
-
 In [6]: print(armaclass.generate(structure))
 version=12;
 
@@ -35,8 +38,10 @@ class Moo
 {
     value=1;
 };
+```
 
-# Indent with tabs instead of spaces
+##### Indent with tabs instead of spaces
+```python
 In [7]: print(armaclass.generate(structure, indent=1, use_tabs=True))
 version=12;
 
