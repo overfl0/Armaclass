@@ -25,9 +25,9 @@ class Generator:
 
     # ============================================
 
-    def __init__(self, indent=4, indent_character=' '):
+    def __init__(self, indent=4, use_tabs=False):
         self.indent_value = indent
-        self.indent_character = indent_character
+        self.indent_character = '\t' if use_tabs else ' '
 
     def _indent(self, text):
         return textwrap.indent(text, self.indent_character * self.indent_value)
@@ -36,7 +36,6 @@ class Generator:
 
     def generate_item(self, name, data):
         item_type = type(data)
-        # print(item_type)
 
         if issubclass(item_type, (float, int)):
             text = self.generate_number(name, data)
@@ -48,7 +47,6 @@ class Generator:
             text = self.generate_string(name, data)
         else:
             raise Exception('Can\'t handle item type: {}'.format(item_type))
-        # print(text, end='')
 
         return text
 

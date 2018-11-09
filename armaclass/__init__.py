@@ -1,1 +1,2 @@
-from .armaclass import parse
+from .parser import parse
+from .arma_generator import generate

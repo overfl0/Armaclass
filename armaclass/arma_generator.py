@@ -34,3 +34,8 @@ class ArmaGenerator(Generator):
             return '"{}"'.format(self._escape_string(data))
 
         return '{}="{}";\n'.format(name, self._escape_string(data))
+
+
+def generate(data, **kwargs):
+    g = ArmaGenerator(**kwargs)
+    return g.generate(data)
