@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 QUOTE = '"'
 SEMICOLON = ';'
+COLON = ":"
 EQUALS = '='
 CURLY_OPEN = '{'
 CURLY_CLOSE = '}'
@@ -195,7 +196,7 @@ class Parser:
             name = self.parsePropertyName()
             self.parseWhitespace()
 
-            if self.current() == ':':
+            if self.current() == COLON:
                 self.next()
                 self.parseWhitespace()
                 self.parsePropertyName()
@@ -203,7 +204,7 @@ class Parser:
 
 
         current = self.current()
-
+        
         if current == SQUARE_OPEN:
             self.ensure(self.next() == SQUARE_CLOSE)
             self.next()
@@ -214,6 +215,10 @@ class Parser:
             self.parseWhitespace()
 
             value = self.parseArray()
+
+        elif current == SEMICOLON:
+            value = self.dict()
+            self.parseWhitespace()
 
         elif current == EQUALS:
             self.next()
