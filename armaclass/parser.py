@@ -15,6 +15,8 @@ COMMA = ','
 MINUS = '-'
 SLASH = '/'
 ASTERISK = '*'
+BACKSLASH = '\\'
+HASH = '#'
 
 VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
@@ -187,6 +189,20 @@ class Parser:
         except IndexError:
             pass
 
+    def parseMacro(self):
+        macro = ""
+        try:
+            while (
+                self.raw[self.currentPosition] not in "\r\n"
+                or self.raw[self.currentPosition - 1: self.currentPosition + 1] in ("\\\r", "\\\n")
+            ):
+                macro += self.current()
+                self.next()
+        except IndexError:
+            pass
+
+        return macro
+
     def parseProperty(self, context):
         name = self.parsePropertyName()
 
@@ -215,6 +231,12 @@ class Parser:
             self.parseWhitespace()
 
             value = self.parseArray()
+
+        elif name.startswith(HASH):
+            macros = context.get(name, [])
+            macros.append(self.parseMacro())
+            context[name] = macros
+            return
 
         elif current == SEMICOLON:
             value = self.dict()
