@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='armaclass',
-    version='0.1.dev',
+    version='0.1',
     packages=['armaclass'],
     url='https://github.com/overfl0/Armaclass',
     license='MIT',
@@ -23,6 +23,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
 
         'License :: OSI Approved :: MIT License',
     ],

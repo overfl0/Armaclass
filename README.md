@@ -12,6 +12,12 @@ I grew tired of using it in conjunction with PyExecJS (complicated to set up and
 Windows) and py2js (too slow to parse even 300KB sqm files) and decided to port the original JavaScript code to
 Python.
 
+## Installation
+
+```
+pip install armaclass
+```
+
 ## Usage
 ##### Parse the values from a string
 ```python
