@@ -11,14 +11,16 @@ CURLY_CLOSE = '}'
 SQUARE_OPEN = '['
 SQUARE_CLOSE = ']'
 COMMA = ','
+PLUS = '+'
 MINUS = '-'
 SLASH = '/'
 ASTERISK = '*'
 
 VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
+
 class Parser:
-    def ensure(self, condition, message = 'Error'):
+    def ensure(self, condition, message='Error'):
         if condition:
             return
 
@@ -30,13 +32,15 @@ class Parser:
             if self.raw[self.currentPosition] == SLASH:
                 if self.raw[self.currentPosition + 1] == SLASH:
                     try:
-                        indexOfLinefeed = self.raw.index('\n', self.currentPosition)
+                        indexOfLinefeed = self.raw.index(
+                            '\n', self.currentPosition)
                         self.currentPosition = indexOfLinefeed
                     except ValueError:
                         self.currentPosition = len(self.raw)
                 elif self.raw[self.currentPosition + 1] == ASTERISK:
                     indexCommentEnd = self.raw.find('*/', self.currentPosition)
-                    self.currentPosition = len(self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+                    self.currentPosition = len(
+                        self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
         except IndexError:
             pass
 
@@ -63,7 +67,8 @@ class Parser:
 
     def forwardToNextQuote(self):
         try:
-            self.currentPosition = self.raw.index(QUOTE, self.currentPosition + 1)
+            self.currentPosition = self.raw.index(
+                QUOTE, self.currentPosition + 1)
         except ValueError:
             self.currentPosition = len(self.raw)
 
@@ -178,7 +183,6 @@ class Parser:
         self.next()
         return result
 
-
     def parseWhitespace(self):
         try:
             while self.raw[self.currentPosition] in ' \t\r\n' or ord(self.raw[self.currentPosition]) < 32:
@@ -200,7 +204,12 @@ class Parser:
                 self.parseWhitespace()
                 self.parsePropertyName()
                 self.parseWhitespace()
-
+        elif name == 'delete':
+            self.parsePropertyName()
+            self.parseWhitespace()
+            self.ensure(self.current() == SEMICOLON)
+            self.next()
+            return
 
         current = self.current()
 
@@ -209,7 +218,10 @@ class Parser:
             self.next()
             self.parseWhitespace()
 
-            self.ensure(self.current() == EQUALS)
+            self.ensure(self.current() == EQUALS or self.current() == PLUS)
+            if self.current() == PLUS:
+                self.ensure(self.next() == EQUALS)
+
             self.next()
             self.parseWhitespace()
 
@@ -226,15 +238,18 @@ class Parser:
         elif current == SLASH:
             if self.next() == SLASH:
                 try:
-                    self.currentPosition = self.raw.index('\n', self.currentPosition)
+                    self.currentPosition = self.raw.index(
+                        '\n', self.currentPosition)
                 except ValueError:
                     self.currentPosition = len(self.raw)
 
             else:
-                raise RuntimeError('Unexpected value at pos {}'.format(self.currentPosition))
+                raise RuntimeError(
+                    'Unexpected value at pos {}'.format(self.currentPosition))
 
         else:
-            raise RuntimeError('Unexpected value at pos {}'.format(self.currentPosition))
+            raise RuntimeError(
+                'Unexpected value at pos {}'.format(self.currentPosition))
 
         context[name] = value
 
