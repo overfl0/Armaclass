@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 QUOTE = '"'
 SEMICOLON = ';'
+COLON = ":"
 EQUALS = '='
 CURLY_OPEN = '{'
 CURLY_CLOSE = '}'
@@ -14,6 +15,8 @@ COMMA = ','
 MINUS = '-'
 SLASH = '/'
 ASTERISK = '*'
+BACKSLASH = '\\'
+HASH = '#'
 
 VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
@@ -186,6 +189,20 @@ class Parser:
         except IndexError:
             pass
 
+    def parseMacro(self):
+        macro = ""
+        try:
+            while (
+                self.raw[self.currentPosition] not in "\r\n"
+                or self.raw[self.currentPosition - 1: self.currentPosition + 1] in ("\\\r", "\\\n")
+            ):
+                macro += self.current()
+                self.next()
+        except IndexError:
+            pass
+
+        return macro
+
     def parseProperty(self, context):
         name = self.parsePropertyName()
 
@@ -195,7 +212,7 @@ class Parser:
             name = self.parsePropertyName()
             self.parseWhitespace()
 
-            if self.current() == ':':
+            if self.current() == COLON:
                 self.next()
                 self.parseWhitespace()
                 self.parsePropertyName()
@@ -203,7 +220,7 @@ class Parser:
 
 
         current = self.current()
-
+        
         if current == SQUARE_OPEN:
             self.ensure(self.next() == SQUARE_CLOSE)
             self.next()
@@ -214,6 +231,16 @@ class Parser:
             self.parseWhitespace()
 
             value = self.parseArray()
+
+        elif name.startswith(HASH):
+            macros = context.get(name, [])
+            macros.append(self.parseMacro())
+            context[name] = macros
+            return
+
+        elif current == SEMICOLON:
+            value = self.dict()
+            self.parseWhitespace()
 
         elif current == EQUALS:
             self.next()

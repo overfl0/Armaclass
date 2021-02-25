@@ -58,6 +58,10 @@ class TestArmaClass(unittest.TestCase):
         testString = 'class Moo : foo {};'
         self.assertEqual(parse(testString), {'Moo': {}})
 
+    def test_macros(self):
+        self.assertEqual(parse('#include "cfgSurfaces.h"'), {"#include": ['"cfgSurfaces.h"']})
+        self.assertEqual(parse('#define TESTING firstline = 1;\\\nsecondline = 2;'), {"#define": ['TESTING firstline = 1;\\\nsecondline = 2;']})
+
     def test_line_comments(self):
         self.assertEqual(parse('// foo comment'), {})
         self.assertEqual(parse('// foo comment\nx=2;'), {'x': 2})
