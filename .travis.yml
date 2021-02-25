@@ -1,3 +1,3 @@
 language: python
 python: 3.5
-script: python -m test.test_basic
+script: python -m unittest test/test_*
