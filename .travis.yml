@@ -1,5 +1,6 @@
 language: python
-python: 3.5
+python:
+  - 3.6  # Last one before dicts became ordered by default
+  - 3.9
 script:
-  - pip install -r requirements.txt
   - pytest
