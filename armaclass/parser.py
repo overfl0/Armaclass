@@ -101,9 +101,14 @@ class Parser:
         s = s.strip()
         if s.startswith('0x'):
             return int(s, 16)
-        else:
+        elif '.' in s:
             try:
                 return float(s)
+            except ValueError:
+                raise RuntimeError('Not a number (float): {}'.format(s))
+        else:
+            try:
+                return int(s)
             except ValueError:
                 raise RuntimeError('Not a number: {}'.format(s))
 
