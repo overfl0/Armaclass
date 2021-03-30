@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 
 from armaclass import parse
@@ -17,13 +19,28 @@ def test_delete():
     assert result == expected
 
 
+def test_ignore_newlines():
+    expected = {
+        'value1': 1,
+        'value2': 2,
+        'value3': 3,
+        'value4': 4,
+    }
+    result = parse('value1 = 1;\r\nvalue2 = 2;\rvalue3 = 3;\nvalue4 = 4;')
+    assert result == expected
+
+
 def test_integer_property():
     expected = {
         'Moo': {
             'value': 1
         }
     }
-    result = parse('class Moo {\r\nvalue=1; };')
+    result = parse('''
+        class Moo {
+            value=1;
+        };
+    ''')
     assert result == expected
 
 
@@ -34,7 +51,13 @@ def test_more_than_one_value_in_file():
             'value': 1
         }
     }
-    result = parse('version=12;\n\nclass Moo  {\r\n value = 1; };')
+    result = parse('''
+        version=12;
+
+        class Moo  {
+            value = 1;
+        };
+    ''')
     assert result == expected
 
 
@@ -44,7 +67,11 @@ def test_array_of_scalars():
             'foo': ['bar', 'baz', 1.5e2]
         }
     }
-    result = parse('class Moo {\r\nfoo[]={"bar", "baz",1.5e2}; };')
+    result = parse('''
+        class Moo {
+            foo[]={"bar", "baz",1.5e2};
+        };
+    ''')
     assert result == expected
 
 
@@ -56,8 +83,11 @@ def test_plus_array():
     expected = {'Moo': {
         'foo': [1, 2, 3]
     }}
-    result = parse(
-        'class Moo {\r\nfoo[] += {1,2,3}; };')
+    result = parse('''
+        class Moo {
+            foo[] += {1,2,3};
+        };
+    ''')
     assert result == expected
 
 # def test_simple_arithmetic(self):
@@ -65,13 +95,13 @@ def test_plus_array():
 
 
 def test_ignore_symbols():
-    test_string = (
-        'class Moo {\n'
-        '\tfoo = xxx;\n'
-        '\tclass xxx {};\n'
-        '};'
-    )
-    with pytest.raises(RuntimeError):
+    test_string = ('''
+        class Moo {
+            foo = xxx;
+            class xxx {};
+        };
+    ''')
+    with pytest.raises(RuntimeError, match=r'Not a number:'):
         parse(test_string)
 
 
@@ -96,7 +126,7 @@ def test_multiline_comments():
 
 
 def test_quote_escaping_by_double_quote():
-    assert parse('foo="bar ""haha"";";\n') == {'foo': 'bar "haha";'}
+    assert parse('foo="bar ""haha"";";') == {'foo': 'bar "haha";'}
 
 
 def test_sample():
@@ -299,10 +329,13 @@ def test_multiline_init():
         'Item0': {
             'position': [1954.6425, 5.9796591, 5538.1045],
             'id': 0,
-            'init': '[this, "Platoon"] call FP_fnc_setVehicleName;\nif (isServer) then {\n  [this] call '
-                    'FP_fnc_clearVehicle; this addWeaponCargoGlobal ["CUP_launch_M136", 1];\n  this '
-                    'addMagazineCargoGlobal ["1Rnd_HE_Grenade_shell", 10];\n  this addMagazineCargoGlobal '
-                    '["ATMine_Range_Mag", 6];\n};'
+            'init': textwrap.dedent('''\
+                [this, "Platoon"] call FP_fnc_setVehicleName;
+                if (isServer) then {
+                  [this] call FP_fnc_clearVehicle; this addWeaponCargoGlobal ["CUP_launch_M136", 1];
+                  this addMagazineCargoGlobal ["1Rnd_HE_Grenade_shell", 10];
+                  this addMagazineCargoGlobal ["ATMine_Range_Mag", 6];
+                };''')
         }
     }
     assert result == expected
