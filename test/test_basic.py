@@ -11,6 +11,41 @@ def test_empty():
     assert result == expected
 
 
+def test_string():
+    expected = {'var': 'foo'}
+    result = parse('var="foo";')
+    assert result == expected
+    assert type(result['var']) == str
+
+
+def test_float():
+    expected = {'var': 12.3}
+    result = parse('var=12.3;')
+    assert result == expected
+    assert type(result['var']) == float
+
+
+def test_int():
+    expected = {'var': 12}
+    result = parse('var=12;')
+    assert result == expected
+    # assert type(result['var']) == int
+
+
+def test_class():
+    expected = {'var': {}}
+    result = parse('class var {};')
+    assert result == expected
+    assert type(result['var']) == dict
+
+
+def test_array():
+    expected = {'var': []}
+    result = parse('var[]={};')
+    assert result == expected
+    assert type(result['var']) == list
+
+
 # We're not really deleting anything, just acknowledging the command to delete an object
 def test_delete():
     expected = {'Foo': {}}
@@ -95,19 +130,19 @@ def test_plus_array():
 
 
 def test_ignore_symbols():
-    test_string = ('''
+    parsed_string = ('''
         class Moo {
             foo = xxx;
             class xxx {};
         };
     ''')
     with pytest.raises(RuntimeError, match=r'Not a number:'):
-        parse(test_string)
+        parse(parsed_string)
 
 
 def test_ignore_inheritance():
-    test_string = 'class Moo : foo {};'
-    assert parse(test_string) == {'Moo': {}}
+    parsed_string = 'class Moo : foo {};'
+    assert parse(parsed_string) == {'Moo': {}}
 
 
 def test_line_comments():
