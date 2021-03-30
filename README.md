@@ -33,6 +33,9 @@ In [3]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };', keep_or
 Out[3]: OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
 ```
 
+Note: Starting with Python 3.7 onwards, dicts are always ordered so it
+doesn't matter if you use `keep_order` or not.
+
 ##### Generate the files based on a parsed (or manually created) structure
 ```python
 In [4]: from collections import OrderedDict
@@ -65,6 +68,14 @@ your own methods (the ones raising `NotImplemented`).
 ### Notes
 The naming conventions may not match Python's pep8 as I was trying to stay close to the original parsing names to
 facilitate porting. Those (internal) names may be changed in the future.
+
+## Development
+- Create a virtualenv using your preferred method (mkvirtualenv, venv, etc...)
+- `pip install -r requirements.txt`
+- Write code AND tests
+- `pytest` to test run your tests
+- `ptw -n` if you want `pytest` to automatically be called whenever
+  you save any file from the project
 
 ## Contributing
 If you feel something is missing or plain wrong, feel free to submit a Pull Request. You are encouraged to submit the

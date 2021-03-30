@@ -1,3 +1,5 @@
 language: python
 python: 3.5
-script: python -m test.test_basic
+script:
+  - pip install -r requirements.txt
+  - pytest
