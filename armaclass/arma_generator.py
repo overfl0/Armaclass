@@ -29,14 +29,19 @@ class ArmaGenerator(Generator):
 
     def generate_array(self, name, data):
         inner = [self.generate_item(None, val) for val in data]
-        template = textwrap.dedent('''\
+        template_regular = textwrap.dedent('''\
             {name}[]=
             {{
             {contents}
             }};
             ''')
 
-        retval = template.format(name=name, contents=self._indent(','.join(inner)))
+        template_inner = '{{{contents}}}'
+
+        template = template_inner if name is None else template_regular
+        indent = self._noindent if name is None else self._indent
+
+        retval = template.format(name=name, contents=indent(', '.join(inner)))
         return retval
 
     def _escape_string(self, data):

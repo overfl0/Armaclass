@@ -32,6 +32,9 @@ class Generator:
     def _indent(self, text):
         return textwrap.indent(text, self.indent_character * self.indent_value)
 
+    def _noindent(self, text):
+        return text  # Dummy function to simplify code
+
     # =============================================
 
     def generate_item(self, name, data):
