@@ -11,7 +11,7 @@ class TestArmaClass(unittest.TestCase):
         result = parse('class Moo {};')
         self.assertEqual(result, expected)
 
-    # We're not really deleting anything, just acknowledging the command to parse a arma config
+    # We're not really deleting anything, just acknowledging the command to delete an object
     def test_delete(self):
         expected = {'Foo': {}}
         result = parse(
