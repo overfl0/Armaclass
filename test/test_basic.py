@@ -86,8 +86,7 @@ class TestArmaClass(unittest.TestCase):
         self.assertEqual(parse("class Moo { /* foo comment*/};"), {'Moo': {}})
 
     def test_quote_escaping_by_double_quote(self):
-        self.assertEqual(parse('foo="bar ""haha"";";\n'),
-                         {'foo': 'bar "haha";'})
+        self.assertEqual(parse('foo="bar ""haha"";";\n'), {'foo': 'bar "haha";'})
 
     def test_sample(self):
         expected = {

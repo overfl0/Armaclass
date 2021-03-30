@@ -32,15 +32,13 @@ class Parser:
             if self.raw[self.currentPosition] == SLASH:
                 if self.raw[self.currentPosition + 1] == SLASH:
                     try:
-                        indexOfLinefeed = self.raw.index(
-                            '\n', self.currentPosition)
+                        indexOfLinefeed = self.raw.index('\n', self.currentPosition)
                         self.currentPosition = indexOfLinefeed
                     except ValueError:
                         self.currentPosition = len(self.raw)
                 elif self.raw[self.currentPosition + 1] == ASTERISK:
                     indexCommentEnd = self.raw.find('*/', self.currentPosition)
-                    self.currentPosition = len(
-                        self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+                    self.currentPosition = len(self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
         except IndexError:
             pass
 
@@ -67,8 +65,7 @@ class Parser:
 
     def forwardToNextQuote(self):
         try:
-            self.currentPosition = self.raw.index(
-                QUOTE, self.currentPosition + 1)
+            self.currentPosition = self.raw.index(QUOTE, self.currentPosition + 1)
         except ValueError:
             self.currentPosition = len(self.raw)
 
@@ -238,18 +235,15 @@ class Parser:
         elif current == SLASH:
             if self.next() == SLASH:
                 try:
-                    self.currentPosition = self.raw.index(
-                        '\n', self.currentPosition)
+                    self.currentPosition = self.raw.index('\n', self.currentPosition)
                 except ValueError:
                     self.currentPosition = len(self.raw)
 
             else:
-                raise RuntimeError(
-                    'Unexpected value at pos {}'.format(self.currentPosition))
+                raise RuntimeError('Unexpected value at pos {}'.format(self.currentPosition))
 
         else:
-            raise RuntimeError(
-                'Unexpected value at pos {}'.format(self.currentPosition))
+            raise RuntimeError('Unexpected value at pos {}'.format(self.currentPosition))
 
         context[name] = value
 
