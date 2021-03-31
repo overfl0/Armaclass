@@ -216,7 +216,15 @@ class Parser:
                 self.parseWhitespace()
                 self.parsePropertyName()
                 self.parseWhitespace()
+
         elif name == 'delete':
+            self.parsePropertyName()
+            self.parseWhitespace()
+            self.ensure(self.current() == SEMICOLON)
+            self.next()
+            return
+
+        elif name == 'import':
             self.parsePropertyName()
             self.parseWhitespace()
             self.ensure(self.current() == SEMICOLON)

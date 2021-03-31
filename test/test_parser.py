@@ -13,6 +13,15 @@ def test_delete():
     assert result == expected
 
 
+# We're not really importing anything, just acknowledging the command to delete an object
+def test_import():
+    expected = {'Foo': {}}
+    result = parse(
+        'import bar;\n'
+        'class Foo {\r\nimport Moo; //Not sure if valid here but whatever\n };')
+    assert result == expected
+
+
 def test_ignore_newlines():
     expected = {
         'value1': 1,
