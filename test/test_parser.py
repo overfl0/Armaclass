@@ -122,6 +122,11 @@ def test_ignore_symbols():
         parse(parsed_string)
 
 
+def test_hanging_quote():
+    with pytest.raises(RuntimeError, match=r'Got EOF'):
+        parse('v="')
+
+
 def test_ignore_inheritance():
     parsed_string = 'class Moo : foo {};'
     assert parse(parsed_string) == {'Moo': {}}

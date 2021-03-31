@@ -90,7 +90,13 @@ class Parser:
             elif self.current() == QUOTE:
                 break
             else:
-                result += self.current()
+                try:
+                    result += self.current()
+                except TypeError:
+                    if self.current() is None:
+                        raise RuntimeError('Got EOF while parsing a string')
+                    raise
+
             self.nextWithoutCommentDetection()
 
         self.ensure(self.current() == QUOTE)
