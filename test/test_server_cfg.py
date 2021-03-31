@@ -95,7 +95,33 @@ onDifferentData = "";				// data with a valid signature, but different version t
 randomMissionOrder = true;	// Randomly iterate through Missions list
 autoSelectMission = true;	// Server auto selects next mission in cycle
 
-class Missions {};			// An empty Missions class means there will be no mission rotation
+class Missions
+{
+    class TestMission01
+    {
+        template = MP_Marksmen_01.Altis;
+        difficulty = "veteran";
+        class Params {};
+    };
+    class TestMission02
+    {
+        template = MP_End_Game_01.Altis;
+        difficulty = "veteran";
+        class Params {};
+    };
+    class TestMission03
+    {
+        template = MP_End_Game_02.Altis;
+        difficulty = "veteran";
+        class Params {};
+    };
+    class TestMission04
+    {
+        template = MP_End_Game_03.Altis;
+        difficulty = "veteran";
+        class Params {};
+    };
+};
 
 missionWhitelist[] = {};	// An empty whitelist means there is no restriction on what missions' available
 '''

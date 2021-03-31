@@ -111,17 +111,6 @@ def test_plus_array():
     assert result == expected
 
 
-def test_ignore_symbols():
-    parsed_string = ('''
-        class Moo {
-            foo = xxx;
-            class xxx {};
-        };
-    ''')
-    with pytest.raises(RuntimeError, match=r'Not a number:'):
-        parse(parsed_string)
-
-
 def test_hanging_quote():
     with pytest.raises(RuntimeError, match=r'Got EOF'):
         parse('v="')

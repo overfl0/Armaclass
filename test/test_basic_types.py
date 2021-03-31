@@ -16,6 +16,20 @@ def test_string():
     assert type(result['var']) == str
 
 
+def test_unquoted_string():
+    expected = {'var': 'foo'}
+    result = parse('var= foo ;')
+    assert result == expected
+    assert type(result['var']) == str
+
+
+def test_unquoted_string_with_dot():
+    expected = {'var': 'fo.o'}
+    result = parse('var= fo.o ;')
+    assert result == expected
+    assert type(result['var']) == str
+
+
 def test_float():
     expected = {'var': 12.3}
     result = parse('var=12.3;')

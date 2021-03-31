@@ -117,12 +117,12 @@ class Parser:
             try:
                 return float(s)
             except ValueError:
-                raise RuntimeError('Not a number (float): {}'.format(s))
+                return s
         else:
             try:
                 return int(s)
             except ValueError:
-                raise RuntimeError('Not a number: {}'.format(s))
+                return s
 
     def parseUnknownExpression(self):
         posOfExpressionEnd = min(
