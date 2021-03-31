@@ -30,16 +30,28 @@ def test_unquoted_string_with_dot():
     assert type(result['var']) == str
 
 
-def test_float():
-    expected = {'var': 12.3}
-    result = parse('var=12.3;')
+@pytest.mark.parametrize('sqf, python', [
+    ('12.3', 12.3),
+    ('-12.3', -12.3),
+    ('+12.3', 12.3),
+    ('0.0', 0.0),
+])
+def test_float(sqf, python):
+    expected = {'var': python}
+    result = parse('var={};'.format(sqf))
     assert result == expected
     assert type(result['var']) == float
 
 
-def test_int():
-    expected = {'var': 12}
-    result = parse('var=12;')
+@pytest.mark.parametrize('sqf, python', [
+    ('12', 12),
+    ('-12', -12),
+    ('+12', 12),
+    ('0', 0),
+])
+def test_int(sqf, python):
+    expected = {'var': python}
+    result = parse('var={};'.format(sqf))
     assert result == expected
     assert type(result['var']) == int
 
