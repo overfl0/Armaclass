@@ -104,9 +104,14 @@ class Parser:
         self.nextWithoutCommentDetection()
         return result
 
-    def parseNumber(self, s):
+    def guessExpression(self, s):
         s = s.strip()
-        if s.startswith('0x'):
+
+        if s[:4].lower() == 'true':
+            return True
+        elif s[:5].lower() == 'false':
+            return False
+        elif s.startswith('0x'):
             return int(s, 16)
         elif '.' in s:
             try:
@@ -119,7 +124,7 @@ class Parser:
             except ValueError:
                 raise RuntimeError('Not a number: {}'.format(s))
 
-    def parseMathExpression(self):
+    def parseUnknownExpression(self):
         posOfExpressionEnd = min(
             self.indexOfOrMaxSize(self.raw, SEMICOLON, self.currentPosition),
             self.indexOfOrMaxSize(self.raw, CURLY_CLOSE, self.currentPosition),
@@ -130,7 +135,7 @@ class Parser:
         self.ensure(posOfExpressionEnd != sys.maxsize)
         self.currentPosition = posOfExpressionEnd
 
-        return self.parseNumber(expression)
+        return self.guessExpression(expression)
 
     def parseNonArrayPropertyValue(self):
         current = self.current()
@@ -141,7 +146,7 @@ class Parser:
         elif current == DOLLAR:
             return self.parseTranslationString()
         else:
-            return self.parseMathExpression()
+            return self.parseUnknownExpression()
 
     def isValidVarnameChar(self, char):
         return char and char in VALID_NAME_CHAR

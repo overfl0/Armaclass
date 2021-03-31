@@ -1,3 +1,5 @@
+import pytest
+
 from armaclass import parse
 
 
@@ -26,6 +28,21 @@ def test_int():
     result = parse('var=12;')
     assert result == expected
     assert type(result['var']) == int
+
+
+@pytest.mark.parametrize('sqf, python', [
+    ('false', False),
+    ('False', False),
+    ('FaLsE', False),
+    ('true', True),
+    ('True', True),
+    ('TrUe', True),
+])
+def test_bool(sqf, python):
+    expected = {'var': python}
+    result = parse('var={};'.format(sqf))
+    assert result == expected
+    assert type(result['var']) == bool
 
 
 def test_class():
