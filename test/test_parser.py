@@ -55,6 +55,20 @@ def test_more_than_one_value_in_file():
     assert result == expected
 
 
+def test_nested_arrays():
+    expected = {
+        'Moo': {
+            'foo': [[], ['foo'], [1, 2]]
+        }
+    }
+    result = parse('''
+        class Moo {
+            foo[]={{}, {"foo"}, {1, 2}};
+        };
+    ''')
+    assert result == expected
+
+
 def test_array_of_scalars():
     expected = {
         'Moo': {
