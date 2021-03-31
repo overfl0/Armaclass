@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='armaclass',
-    version='0.1',
+    version='0.2',
     packages=['armaclass'],
     url='https://github.com/overfl0/Armaclass',
     license='MIT',
@@ -13,7 +13,7 @@ setup(
 
     classifiers=[
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
