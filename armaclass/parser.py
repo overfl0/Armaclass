@@ -203,6 +203,7 @@ class Parser:
         return self.raw[self.currentPosition] in ' \t\r\n' or ord(self.raw[self.currentPosition]) < 32
 
     def parseProperty(self, context):
+        value = None
         name = self.parsePropertyName()
 
         self.parseWhitespace()
