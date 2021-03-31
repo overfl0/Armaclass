@@ -117,8 +117,20 @@ def test_array_of_scalars():
     assert result == expected
 
 
-def test_scientific_notation():
+def test_scientific_notation_negative_exponent():
     assert parse('x=-1.5e2;') == {'x': -1.5e2}
+
+
+def test_scientific_notation_positive_exponent():
+    assert parse('x=1.5e2;') == {'x': 1.5e2}
+
+
+def test_scientific_explicitly_positive_exponent():
+    assert parse('x=+1.5e2;') == {'x': 1.5e2}
+
+
+def test_scientific_notation_negative_exponent_with_zeroes():
+    assert parse('x=-1.9073486e-006;') == {'x': -1.9073486e-6}
 
 
 def test_plus_array():
@@ -131,9 +143,6 @@ def test_plus_array():
         };
     ''')
     assert result == expected
-
-# def test_simple_arithmetic(self):
-#     assert parse('x=48+0x800;'), {'x': 48 + 0x800})
 
 
 def test_ignore_symbols():
