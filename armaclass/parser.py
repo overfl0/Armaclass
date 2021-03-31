@@ -131,7 +131,7 @@ class Parser:
 
         return self.parseNumber(expression)
 
-    def parsePropertyValue(self):
+    def parseNonArrayPropertyValue(self):
         current = self.current()
         if current == CURLY_OPEN:
             return self.parseArray()
@@ -172,7 +172,7 @@ class Parser:
         self.parseWhitespace()
 
         while self.current() != CURLY_CLOSE:
-            result.append(self.parsePropertyValue())
+            result.append(self.parseNonArrayPropertyValue())
             self.parseWhitespace()
 
             if self.current() == COMMA:
@@ -231,7 +231,7 @@ class Parser:
         elif current == EQUALS:
             self.next()
             self.parseWhitespace()
-            value = self.parsePropertyValue()
+            value = self.parseNonArrayPropertyValue()
 
         elif current == CURLY_OPEN:
             value = self.parseClassValue()
