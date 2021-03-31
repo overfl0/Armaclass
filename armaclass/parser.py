@@ -325,7 +325,6 @@ class Parser:
         self.parseWhitespace()
         while self.current():
             self.parseProperty(result)
-            self.next()
             self.parseWhitespace()
 
         return result

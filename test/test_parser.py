@@ -33,6 +33,15 @@ def test_ignore_newlines():
     assert result == expected
 
 
+def test_dont_eat_chars_after_semicolon():
+    expected = {
+        'Foo': [5],
+        'Moo': [5],
+    }
+    result = parse('Foo[] = {5};Moo[] = {5};')
+    assert result == expected
+
+
 def test_integer_property():
     expected = {
         'Moo': {
