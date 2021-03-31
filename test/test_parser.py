@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 
-from armaclass import parse
+from armaclass import parse, ParseError
 
 
 # We're not really deleting anything, just acknowledging the command to delete an object
@@ -121,7 +121,7 @@ def test_plus_array():
 
 
 def test_hanging_quote():
-    with pytest.raises(RuntimeError, match=r'Got EOF'):
+    with pytest.raises(ParseError, match=r'Got EOF'):
         parse('v="')
 
 

@@ -20,12 +20,16 @@ ASTERISK = '*'
 VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
 
+class ParseError(RuntimeError):
+    pass
+
+
 class Parser:
     def ensure(self, condition, message='Error'):
         if condition:
             return
 
-        raise RuntimeError('{} at position {}. Before: {}'.format(
+        raise ParseError('{} at position {}. Before: {}'.format(
             message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
 
     def detectComment(self):
@@ -95,7 +99,7 @@ class Parser:
                     result += self.current()
                 except TypeError:
                     if self.current() is None:
-                        raise RuntimeError('Got EOF while parsing a string')
+                        raise ParseError('Got EOF while parsing a string')
                     raise
 
             self.nextWithoutCommentDetection()
@@ -264,10 +268,10 @@ class Parser:
                     self.currentPosition = len(self.raw)
 
             else:
-                raise RuntimeError('Unexpected value at pos {}'.format(self.currentPosition))
+                raise ParseError('Unexpected value at pos {}'.format(self.currentPosition))
 
         else:
-            raise RuntimeError('Unexpected value at pos {}'.format(self.currentPosition))
+            raise ParseError('Unexpected value at pos {}'.format(self.currentPosition))
 
         context[name] = value
 
@@ -287,7 +291,7 @@ class Parser:
         self.next()
 
         if self.raw[self.currentPosition: self.currentPosition + 3] != 'STR':
-            raise RuntimeError('Invalid translation string beginning')
+            raise ParseError('Invalid translation string beginning')
 
         while self.current():
             current = self.current()
@@ -302,7 +306,7 @@ class Parser:
             self.nextWithoutCommentDetection()
 
         if self.current() not in (SEMICOLON, COMMA, CURLY_CLOSE):
-            raise RuntimeError('Syntax error next translation string')
+            raise ParseError('Syntax error next translation string')
 
         return self.translateString(result)
 

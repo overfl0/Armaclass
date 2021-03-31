@@ -1,6 +1,6 @@
 import pytest
 
-from armaclass import parse
+from armaclass import parse, ParseError
 
 
 def test_class_with_translation_strings():
@@ -51,7 +51,7 @@ def test_whitespace_in_translation_key_property():
         'STR_CLASS_TITLE': 'Translated title',
         'STR_CLASS_TEXT': 'Translated text'
     }
-    with pytest.raises(RuntimeError, match=r'Syntax error'):
+    with pytest.raises(ParseError, match=r'Syntax error'):
         parse('''
             class testClass {
                 title = $STR_CLA SS_TITLE;
@@ -64,7 +64,7 @@ def test_whitespace_in_translation_key_array():
         'STR_CLASS_TITLE': 'Translated title',
         'STR_CLASS_TEXT': 'Translated text'
     }
-    with pytest.raises(RuntimeError, match=r'Syntax error'):
+    with pytest.raises(ParseError, match=r'Syntax error'):
         parse('''
             class testClass {
                 title = $STR_CLASS_TITLE;
@@ -77,7 +77,7 @@ def test_eof_in_translation_key():
         'STR_CLASS_TITLE': 'Translated title',
         'STR_CLASS_TEXT': 'Translated text'
     }
-    with pytest.raises(RuntimeError, match=r'Syntax error'):
+    with pytest.raises(ParseError, match=r'Syntax error'):
         parse('''
             class testClass {
                 title = $STR_CLASS_TITLE;
