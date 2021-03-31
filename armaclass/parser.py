@@ -14,6 +14,7 @@ COMMA = ','
 PLUS = '+'
 MINUS = '-'
 SLASH = '/'
+DOLLAR = '$'
 ASTERISK = '*'
 
 VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
@@ -137,6 +138,8 @@ class Parser:
             return self.parseArray()
         elif current == QUOTE:
             return self.parseString()
+        elif current == DOLLAR:
+            return self.parseTranslationString()
         else:
             return self.parseMathExpression()
 
@@ -186,10 +189,13 @@ class Parser:
 
     def parseWhitespace(self):
         try:
-            while self.raw[self.currentPosition] in ' \t\r\n' or ord(self.raw[self.currentPosition]) < 32:
+            while self.isWhitespace():
                 self.next()
         except IndexError:
             pass
+
+    def isWhitespace(self):
+        return self.raw[self.currentPosition] in ' \t\r\n' or ord(self.raw[self.currentPosition]) < 32
 
     def parseProperty(self, context):
         name = self.parsePropertyName()
@@ -255,9 +261,41 @@ class Parser:
         self.ensure(self.current() == SEMICOLON)
         self.next()
 
-    def parse(self, raw, keep_order):
+    def translateString(self, txt: str) -> str:
+        try:
+            return self.translations[txt]
+        except KeyError:
+            return txt
+
+    def parseTranslationString(self):
+        result = ''
+        assert self.current() == DOLLAR
+        self.next()
+
+        if self.raw[self.currentPosition: self.currentPosition + 3] != 'STR':
+            raise RuntimeError('Invalid translation string beginning')
+
+        while self.current():
+            current = self.current()
+            if current in (SEMICOLON, COMMA, CURLY_CLOSE):
+                break
+            else:
+                if self.isWhitespace():
+                    self.parseWhitespace()
+                    break
+                else:
+                    result += current
+            self.nextWithoutCommentDetection()
+
+        if self.current() not in (SEMICOLON, COMMA, CURLY_CLOSE):
+            raise RuntimeError('Syntax error next translation string')
+
+        return self.translateString(result)
+
+    def parse(self, raw, keep_order, translations):
         self.currentPosition = 0
         self.raw = raw
+        self.translations = translations or {}
         if keep_order:
             self.dict = OrderedDict
         else:
@@ -275,6 +313,6 @@ class Parser:
         return result
 
 
-def parse(raw, *, keep_order=False):
+def parse(raw, *, keep_order=False, translations=None):
     p = Parser()
-    return p.parse(raw, keep_order)
+    return p.parse(raw, keep_order, translations)
