@@ -131,13 +131,6 @@ class Parser:
 
         return self.parseNumber(expression)
 
-        # NOTE: This looks like a bug in arma-class-parser
-        result = 0
-        for value_s in expression.split('+'):
-            result += self.parseNumber(value_s)
-
-        return result
-
     def parsePropertyValue(self):
         current = self.current()
         if current == CURLY_OPEN:
