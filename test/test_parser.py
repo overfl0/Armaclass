@@ -134,12 +134,28 @@ def test_line_comments():
     assert parse('class Moo { // foo comment\n};') == {'Moo': {}}
 
 
-def test_multiline_comments():
+def test_slash_asterisk_comments():
     assert parse('/* foo comment*/') == {}
     assert parse('/* foo comment\nsomething */x=2;') == {'x': 2}
     assert parse('x=2;/* foo comment*/') == {'x': 2}
     assert parse('x/*asd*/=/**/2;/* foo comment*/') == {'x': 2}
     assert parse('class Moo { /* foo comment*/};') == {'Moo': {}}
+
+
+def test_multiline_comments():
+    expected = {
+        'testClass': {'values': [0, 1]}
+    }
+    to_parse = textwrap.dedent('''
+        /*
+        multiline
+        comment
+        */
+        class testClass {
+            values[] = {0,1};
+        };
+    ''')
+    assert parse(to_parse) == expected
 
 
 def test_quote_escaping_by_double_quote():
