@@ -19,7 +19,7 @@ pip install armaclass
 ```
 
 ## Usage
-##### Parse the values from a string
+#### Parse the values from a string
 ```python
 In [1]: import armaclass
 
@@ -27,7 +27,7 @@ In [2]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };')
 Out[2]: {'Moo': {'value': 1.0}, 'version': 12.0}
 ```
 
-##### Keep the values ordered as they were in the original file
+#### Keep the values ordered as they were in the original file
 ```python
 In [3]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };', keep_order=True)
 Out[3]: OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
@@ -36,7 +36,7 @@ Out[3]: OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
 Note: Starting with Python 3.7 onwards, dicts are always ordered so it
 doesn't matter if you use `keep_order` or not.
 
-##### Generate the files based on a parsed (or manually created) structure
+#### Generate the files based on a parsed (or manually created) structure
 ```python
 In [4]: from collections import OrderedDict
 In [5]: structure = OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
@@ -49,7 +49,7 @@ class Moo
 };
 ```
 
-##### Indent with tabs instead of spaces
+#### Indent with tabs instead of spaces
 ```python
 In [7]: print(armaclass.generate(structure, indent=1, use_tabs=True))
 version=12;
@@ -60,16 +60,17 @@ class Moo
 };
 ```
 
-### Extending the generator
+## Extending the generator
 You can use this library to write a program that will port your Arma class files to DayZ, for example.
 To do so, you will need to create your own generator by subclassing `armaclass.generator.Generator` and implementing
 your own methods (the ones raising `NotImplemented`).
 
+## Development
 ### Notes
 The naming conventions may not match Python's pep8 as I was trying to stay close to the original parsing names to
 facilitate porting. Those (internal) names may be changed in the future.
 
-## Development
+### Making code changes 
 - Create a virtualenv using your preferred method (mkvirtualenv, venv, etc...)
 - `pip install -r requirements.txt`
 - Write code AND tests

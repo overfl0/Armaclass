@@ -1,14 +1,22 @@
 from setuptools import setup
 
+# read the contents of your README file
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='armaclass',
-    version='0.2.1',
+    version='0.2.2',
     packages=['armaclass'],
     url='https://github.com/overfl0/Armaclass',
     license='MIT',
     author='Lukasz Taczuk',
     author_email='',
     description='Python parser and generator for Arma class definitions (e.g. sqm files)',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     keywords='arma pbo sqm class parser generator',
 
     classifiers=[
