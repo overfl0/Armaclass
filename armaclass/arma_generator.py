@@ -4,6 +4,12 @@ from .generator import Generator
 
 
 class ArmaGenerator(Generator):
+    def generate_bool(self, name, data):
+        if name is None:  # We're in an array, we don't have a name. Don't print a newline at the end
+            return 'true' if data else 'false'
+
+        return '{}={};\n'.format(name, 'true' if data else 'false')
+
     def generate_float(self, name, data):
         if name is None:  # We're in an array, we don't have a name. Don't print a newline at the end
             return '{}'.format(data)

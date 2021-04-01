@@ -8,6 +8,9 @@ class Generator:
             return self.generate_int(name, int(data))
         return self.generate_float(name, data)
 
+    def generate_bool(self, name, data):
+        raise NotImplemented
+
     def generate_float(self, name, data):
         raise NotImplemented
 
@@ -40,7 +43,9 @@ class Generator:
     def generate_item(self, name, data):
         item_type = type(data)
 
-        if issubclass(item_type, (float, int)):
+        if issubclass(item_type, bool):
+            text = self.generate_bool(name, data)
+        elif issubclass(item_type, (float, int)):
             text = self.generate_number(name, data)
         elif issubclass(item_type, dict):
             text = self.generate_class(name, data)
