@@ -2,14 +2,14 @@ from setuptools import setup
 
 setup(
     name='armaclass',
-    version='0.2',
+    version='0.2.1',
     packages=['armaclass'],
     url='https://github.com/overfl0/Armaclass',
     license='MIT',
     author='Lukasz Taczuk',
     author_email='',
-    description='Python parser for Arma class definitions (e.g. sqm files)',
-    keywords='arma pbo sqm class parser',
+    description='Python parser and generator for Arma class definitions (e.g. sqm files)',
+    keywords='arma pbo sqm class parser generator',
 
     classifiers=[
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
