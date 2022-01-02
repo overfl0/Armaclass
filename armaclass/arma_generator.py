@@ -57,7 +57,13 @@ class ArmaGenerator(Generator):
         if name is None:  # We're in an array, we don't have a name. Don't print a newline at the end
             return '"{}"'.format(self._escape_string(data))
 
-        return '{}="{}";\n'.format(name, self._escape_string(data))
+        # Presence of newlines indicates there is at least one string break
+        # Serialization must preserve them
+        if '\n' in data:
+            data_split = [f'"{self._escape_string(string)}"' for string in data.split('\n')]
+            return '{}={};\n'.format(name, ' \\n '.join(data_split))
+        else:
+            return '{}="{}";\n'.format(name, self._escape_string(data))
 
 
 def generate(data, **kwargs):
