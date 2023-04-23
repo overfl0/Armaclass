@@ -1,6 +1,6 @@
 ## Status
 
-[![Build Status](https://travis-ci.org/overfl0/Armaclass.svg?branch=master)](https://travis-ci.org/overfl0/Armaclass)
+[![Build Status](https://github.com/overfl0/Armaclass/actions/workflows/build.yml/badge.svg)](https://github.com/overfl0/Armaclass/actions/workflows/build.yml)
 
 ## About
 This is a Python parser for Arma 3 class definitions such as those appearing inside unrapified mission files.
