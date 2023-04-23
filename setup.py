@@ -8,7 +8,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='armaclass',
-    version='0.2.2',
+    version='0.2.3',
     packages=['armaclass'],
     url='https://github.com/overfl0/Armaclass',
     license='MIT',
@@ -28,8 +28,6 @@ setup(
         'Topic :: Software Development :: Build Tools',
 
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',

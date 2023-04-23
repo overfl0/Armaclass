@@ -24,22 +24,15 @@ pip install armaclass
 In [1]: import armaclass
 
 In [2]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };')
-Out[2]: {'Moo': {'value': 1.0}, 'version': 12.0}
+Out[2]: {'version': 12, 'Moo': {'value': 1}}
 ```
 
-#### Keep the values ordered as they were in the original file
-```python
-In [3]: armaclass.parse('version=12;\n\nclass Moo  {\r\n value = 1; };', keep_order=True)
-Out[3]: OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
-```
-
-Note: Starting with Python 3.7 onwards, dicts are always ordered so it
-doesn't matter if you use `keep_order` or not.
+Note that due to Python's implementation of dicts, the keys order is kept the same
+as in the class parsed.
 
 #### Generate the files based on a parsed (or manually created) structure
 ```python
-In [4]: from collections import OrderedDict
-In [5]: structure = OrderedDict([('version', 12.0), ('Moo', OrderedDict([('value', 1.0)]))])
+In [5]: structure = {'version': 12.0, 'Moo': {'value': 1.0}}
 In [6]: print(armaclass.generate(structure))
 version=12;
 
