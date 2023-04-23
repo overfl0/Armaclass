@@ -3,6 +3,7 @@ import sys
 
 QUOTE = '"'
 SEMICOLON = ';'
+COLON = ':'
 EQUALS = '='
 CURLY_OPEN = '{'
 CURLY_CLOSE = '}'
@@ -214,7 +215,7 @@ class Parser:
             name = self.parsePropertyName()
             self.parseWhitespace()
 
-            if self.current() == ':':
+            if self.current() == COLON:
                 self.next()
                 self.parseWhitespace()
                 self.parsePropertyName()
