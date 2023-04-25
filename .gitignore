@@ -1,5 +1,6 @@
 *.pyc
 *.c
+*.pyd
 .idea
 build
 dist

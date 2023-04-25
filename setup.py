@@ -36,8 +36,9 @@ setup(
 
         'License :: OSI Approved :: MIT License',
     ],
-    ext_modules=cythonize(os.path.join('armaclass', 'parser.py'),
-                          compiler_directives={'language_level': '3'}),
+    ext_modules=cythonize(os.path.join('armaclass', 'parser.pyx'),
+                          compiler_directives={'language_level': '3'},
+                          annotate=True),
 )
 
 # Install in "editable mode" for development:

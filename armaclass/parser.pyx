@@ -1,118 +1,163 @@
 import string
 import sys
 
-QUOTE = '"'
-SEMICOLON = ';'
-COLON = ':'
-EQUALS = '='
-CURLY_OPEN = '{'
-CURLY_CLOSE = '}'
-SQUARE_OPEN = '['
-SQUARE_CLOSE = ']'
-COMMA = ','
-PLUS = '+'
-MINUS = '-'
-SLASH = '/'
-DOLLAR = '$'
-ASTERISK = '*'
+cdef unicode QUOTE = '"'
+cdef unicode SEMICOLON = ';'
+cdef unicode COLON = ':'
+cdef unicode EQUALS = '='
+cdef unicode CURLY_OPEN = '{'
+cdef unicode CURLY_CLOSE = '}'
+cdef unicode SQUARE_OPEN = '['
+cdef unicode SQUARE_CLOSE = ']'
+cdef unicode COMMA = ','
+cdef unicode PLUS = '+'
+cdef unicode MINUS = '-'
+cdef unicode SLASH = '/'
+cdef unicode DOLLAR = '$'
+cdef unicode ASTERISK = '*'
 
-VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
+cdef unicode NEWLINE = '\n'
+cdef unicode TRUE_STR = 'true'
+cdef unicode FALSE_STR = 'false'
 
+cdef unicode VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
+
+cdef long long maxsize = sys.maxsize
 
 class ParseError(RuntimeError):
     pass
 
 
-class Parser:
-    def ensure(self, condition, message='Error'):
+cdef class Parser:
+    cdef int currentPosition
+    cdef unicode raw
+    cdef int raw_len
+    cdef dict translations
+
+    cdef ensure(self, bint condition, unicode message='Error'):
         if condition:
             return
 
         raise ParseError('{} at position {}. Before: {}'.format(
             message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
 
-    def detectComment(self):
-        try:
-            if self.raw[self.currentPosition] == SLASH:
-                if self.raw[self.currentPosition + 1] == SLASH:
-                    try:
-                        indexOfLinefeed = self.raw.index('\n', self.currentPosition)
-                        self.currentPosition = indexOfLinefeed
-                    except ValueError:
-                        self.currentPosition = len(self.raw)
-                elif self.raw[self.currentPosition + 1] == ASTERISK:
-                    indexCommentEnd = self.raw.find('*/', self.currentPosition)
-                    self.currentPosition = len(self.raw) if indexCommentEnd == -1 else indexCommentEnd + len('*/')
-        except IndexError:
-            pass
+    cdef detectComment(self):
+        cdef int indexCommentEnd
+        cdef int indexOfLinefeed
 
-    def next(self):
+        if self.currentPosition >= self.raw_len:
+            return
+
+        if self.raw[self.currentPosition] == SLASH:
+            if self.currentPosition + 1 >= self.raw_len:
+                return
+
+            if self.raw[self.currentPosition + 1] == SLASH:
+                # indexOfLinefeed = self.raw.index(NEWLINE, self.currentPosition)
+                indexOfLinefeed = self.raw.find(NEWLINE, self.currentPosition)
+                if indexOfLinefeed == -1:
+                    self.currentPosition = self.raw_len
+                else:
+                    self.currentPosition = indexOfLinefeed
+
+            elif self.raw[self.currentPosition + 1] == ASTERISK:
+                indexCommentEnd = self.raw.find('*/', self.currentPosition)
+                self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+
+    # cdef detectComment(self):
+    #     cdef int indexCommentEnd
+    #     cdef int indexOfLinefeed
+    #     try:
+    #         if self.raw[self.currentPosition] == SLASH:
+    #             if self.raw[self.currentPosition + 1] == SLASH:
+    #                 try:
+    #                     indexOfLinefeed = self.raw.index(NEWLINE, self.currentPosition)
+    #                     self.currentPosition = indexOfLinefeed
+    #                 except ValueError:
+    #                     self.currentPosition = self.raw_len
+    #             elif self.raw[self.currentPosition + 1] == ASTERISK:
+    #                 indexCommentEnd = self.raw.find('*/', self.currentPosition)
+    #                 self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+    #     except IndexError:
+    #         pass
+
+    cdef next(self):
         self.currentPosition += 1
         self.detectComment()
         return self.current()
 
-    def nextWithoutCommentDetection(self):
+    cdef nextWithoutCommentDetection(self):
         self.currentPosition += 1
         return self.current()
 
-    def current(self):
+    cdef unicode current(self):
+        # if self.currentPosition >= self.raw_len:
+        #     return None
+        # return self.raw[self.currentPosition]
         try:
             return self.raw[self.currentPosition]
         except IndexError:
             return None
 
-    def weHaveADoubleQuote(self):
-        return self.raw[self.currentPosition:self.currentPosition + 2] == '""'
+    cdef bint weHaveADoubleQuote(self):
+        cdef unicode double_quote = '""'
+        return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
 
-    def weHaveAStringLineBreak(self):
+    cdef bint weHaveAStringLineBreak(self):
         return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
 
-    def forwardToNextQuote(self):
+    cdef forwardToNextQuote(self):
         try:
             self.currentPosition = self.raw.index(QUOTE, self.currentPosition + 1)
         except ValueError:
-            self.currentPosition = len(self.raw)
+            self.currentPosition = self.raw_len
 
-    def indexOfOrMaxSize(self, haystack, needle, fromPos):
+    cdef long long indexOfOrMaxSize(self, unicode haystack, unicode needle, int fromPos):
         try:
             return haystack.index(needle, fromPos)
         except ValueError:
-            return sys.maxsize
+            return maxsize
 
-    def parseString(self):
-        result = ''
+    cdef parseString(self):
+        cdef unicode tmp;
+        # result = ''
+        result = []
+
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
         while True:
             if self.weHaveADoubleQuote():
-                result += self.current()
+                # result += self.current()
+                result.append(self.current())
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
-                result += '\n'
+                # result += '\n'
+                result.append('\n')
                 self.next()
                 self.forwardToNextQuote()
             elif self.current() == QUOTE:
                 break
             else:
-                try:
-                    result += self.current()
-                except TypeError:
-                    if self.current() is None:
-                        raise ParseError('Got EOF while parsing a string')
-                    raise
+                tmp = self.current()
+                if tmp is None:
+                    raise ParseError('Got EOF while parsing a string')
+
+                # result += tmp
+                result.append(tmp)
 
             self.nextWithoutCommentDetection()
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
-        return result
+        return ''.join(result)
+        # return result
 
-    def guessExpression(self, s):
+    cdef guessExpression(self, unicode s):
         s = s.strip()
 
-        if s[:4].lower() == 'true':
+        if s[:4].lower() == TRUE_STR:
             return True
-        elif s[:5].lower() == 'false':
+        elif s[:5].lower() == FALSE_STR:
             return False
         elif s.startswith('0x'):
             return int(s, 16)
@@ -127,7 +172,7 @@ class Parser:
             except ValueError:
                 return s
 
-    def parseUnknownExpression(self):
+    cdef parseUnknownExpression(self):
         posOfExpressionEnd = min(
             self.indexOfOrMaxSize(self.raw, SEMICOLON, self.currentPosition),
             self.indexOfOrMaxSize(self.raw, CURLY_CLOSE, self.currentPosition),
@@ -135,13 +180,13 @@ class Parser:
         )
 
         expression = self.raw[self.currentPosition:posOfExpressionEnd]
-        self.ensure(posOfExpressionEnd != sys.maxsize)
+        self.ensure(posOfExpressionEnd != maxsize)
         self.currentPosition = posOfExpressionEnd
 
         return self.guessExpression(expression)
 
-    def parseNonArrayPropertyValue(self):
-        current = self.current()
+    cdef parseNonArrayPropertyValue(self):
+        cdef unicode current = self.current()
         if current == CURLY_OPEN:
             return self.parseArray()
         elif current == QUOTE:
@@ -151,17 +196,17 @@ class Parser:
         else:
             return self.parseUnknownExpression()
 
-    def isValidVarnameChar(self, char):
-        return char and char in VALID_NAME_CHAR
+    cdef bint isValidVarnameChar(self, unicode chr):
+        return chr and chr in VALID_NAME_CHAR
 
-    def parsePropertyName(self):
+    cdef parsePropertyName(self):
         result = self.current()
         while(self.isValidVarnameChar(self.next())):
             result += self.current()
 
         return result
 
-    def parseClassValue(self):
+    cdef parseClassValue(self):
         result = {}
 
         self.ensure(self.current() == CURLY_OPEN)
@@ -176,7 +221,7 @@ class Parser:
 
         return result
 
-    def parseArray(self):
+    cdef parseArray(self):
         result = []
         self.ensure(self.current() == CURLY_OPEN)
         self.next()
@@ -195,17 +240,17 @@ class Parser:
         self.next()
         return result
 
-    def parseWhitespace(self):
+    cdef void parseWhitespace(self):
         try:
             while self.isWhitespace():
                 self.next()
         except IndexError:
             pass
 
-    def isWhitespace(self):
+    cdef bint isWhitespace(self):
         return self.raw[self.currentPosition] in ' \t\r\n' or ord(self.raw[self.currentPosition]) < 32
 
-    def parseProperty(self, context):
+    cdef void parseProperty(self, dict context):
         value = None
         name = self.parsePropertyName()
 
@@ -264,7 +309,7 @@ class Parser:
                 try:
                     self.currentPosition = self.raw.index('\n', self.currentPosition)
                 except ValueError:
-                    self.currentPosition = len(self.raw)
+                    self.currentPosition = self.raw_len
 
             else:
                 raise ParseError('Unexpected value at pos {}'.format(self.currentPosition))
@@ -278,13 +323,13 @@ class Parser:
         self.ensure(self.current() == SEMICOLON)
         self.next()
 
-    def translateString(self, txt: str) -> str:
+    cdef unicode translateString(self, txt: unicode):
         try:
             return self.translations[txt]
         except KeyError:
             return txt
 
-    def parseTranslationString(self):
+    cdef parseTranslationString(self):
         result = ''
         assert self.current() == DOLLAR
         self.next()
@@ -312,7 +357,8 @@ class Parser:
     def parse(self, raw, translations):
         self.currentPosition = 0
         self.raw = raw
-        self.translations = translations or {}
+        self.raw_len = len(raw)
+        self.translations = translations if translations else None
 
         result = {}
 
