@@ -1,22 +1,29 @@
 import string
 import sys
 
-cdef unicode QUOTE = '"'
-cdef unicode SEMICOLON = ';'
-cdef unicode COLON = ':'
-cdef unicode EQUALS = '='
-cdef unicode CURLY_OPEN = '{'
-cdef unicode CURLY_CLOSE = '}'
-cdef unicode SQUARE_OPEN = '['
-cdef unicode SQUARE_CLOSE = ']'
-cdef unicode COMMA = ','
-cdef unicode PLUS = '+'
-cdef unicode MINUS = '-'
-cdef unicode SLASH = '/'
-cdef unicode DOLLAR = '$'
-cdef unicode ASTERISK = '*'
+cimport cython
+from cpython cimport array
+import array
 
-cdef unicode NEWLINE = '\n'
+cdef Py_UCS4 QUOTE = '"'
+cdef Py_UCS4 SEMICOLON = ';'
+cdef Py_UCS4 COLON = ':'
+cdef Py_UCS4 EQUALS = '='
+cdef Py_UCS4 CURLY_OPEN = '{'
+cdef Py_UCS4 CURLY_CLOSE = '}'
+cdef Py_UCS4 SQUARE_OPEN = '['
+cdef Py_UCS4 SQUARE_CLOSE = ']'
+cdef Py_UCS4 COMMA = ','
+cdef Py_UCS4 PLUS = '+'
+cdef Py_UCS4 MINUS = '-'
+cdef Py_UCS4 SLASH = '/'
+cdef Py_UCS4 DOLLAR = '$'
+cdef Py_UCS4 ASTERISK = '*'
+cdef Py_UCS4 SPACE = ' '
+cdef Py_UCS4 BACKSLASH = '\\'
+cdef Py_UCS4 N = 'n'
+
+cdef Py_UCS4 NEWLINE = '\n'
 cdef unicode TRUE_STR = 'true'
 cdef unicode FALSE_STR = 'false'
 
@@ -34,13 +41,15 @@ cdef class Parser:
     cdef int raw_len
     cdef dict translations
 
-    cdef ensure(self, bint condition, unicode message='Error'):
+    cdef void ensure(self, bint condition, unicode message='Error'):
         if condition:
             return
 
         raise ParseError('{} at position {}. Before: {}'.format(
             message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef detectComment(self):
         cdef int indexCommentEnd
         cdef int indexOfLinefeed
@@ -64,49 +73,51 @@ cdef class Parser:
                 indexCommentEnd = self.raw.find('*/', self.currentPosition)
                 self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + len('*/')
 
-    # cdef detectComment(self):
-    #     cdef int indexCommentEnd
-    #     cdef int indexOfLinefeed
-    #     try:
-    #         if self.raw[self.currentPosition] == SLASH:
-    #             if self.raw[self.currentPosition + 1] == SLASH:
-    #                 try:
-    #                     indexOfLinefeed = self.raw.index(NEWLINE, self.currentPosition)
-    #                     self.currentPosition = indexOfLinefeed
-    #                 except ValueError:
-    #                     self.currentPosition = self.raw_len
-    #             elif self.raw[self.currentPosition + 1] == ASTERISK:
-    #                 indexCommentEnd = self.raw.find('*/', self.currentPosition)
-    #                 self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + len('*/')
-    #     except IndexError:
-    #         pass
-
-    cdef next(self):
+    cdef Py_UCS4 next(self):
         self.currentPosition += 1
         self.detectComment()
         return self.current()
 
     cdef nextWithoutCommentDetection(self):
         self.currentPosition += 1
-        return self.current()
 
-    cdef unicode current(self):
-        # if self.currentPosition >= self.raw_len:
-        #     return None
-        # return self.raw[self.currentPosition]
-        try:
-            return self.raw[self.currentPosition]
-        except IndexError:
-            return None
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef Py_UCS4 current(self):
+        if self.currentPosition >= self.raw_len:
+            return -1
+        return self.raw[self.currentPosition]
+        # try:
+        #     return self.raw[self.currentPosition]
+        # except IndexError:
+        #     return -1
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef bint weHaveADoubleQuote(self):
-        cdef unicode double_quote = '""'
-        return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
+        # cdef unicode double_quote = '""'
+        # return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
+        if self.raw_len >= self.currentPosition + 2 and self.raw[self.currentPosition] == QUOTE and self.raw[self.currentPosition + 1] == QUOTE:
+            return True
+        return False
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef bint weHaveAStringLineBreak(self):
-        return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
+        if (
+            self.raw_len >= self.currentPosition + 6 and
+            self.raw[self.currentPosition] == QUOTE and
+            self.raw[self.currentPosition + 1] == SPACE and
+            self.raw[self.currentPosition + 2] == BACKSLASH and
+            self.raw[self.currentPosition + 3] == N and
+            self.raw[self.currentPosition + 4] == SPACE and
+            self.raw[self.currentPosition + 5] == QUOTE
+        ):
+            return True
+        return False
+        #return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
 
-    cdef forwardToNextQuote(self):
+    cdef void forwardToNextQuote(self):
         try:
             self.currentPosition = self.raw.index(QUOTE, self.currentPosition + 1)
         except ValueError:
@@ -118,10 +129,13 @@ cdef class Parser:
         except ValueError:
             return maxsize
 
-    cdef parseString(self):
-        cdef unicode tmp;
+    cdef unicode parseString(self):
+        cdef Py_UCS4 tmp;
         # result = ''
         result = []
+        #array.array[double] a = arg1
+        #cdef array.array result = array.array('u', [])
+        #cdef array.array[unicode] result
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
@@ -132,14 +146,14 @@ cdef class Parser:
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
                 # result += '\n'
-                result.append('\n')
+                result.append(NEWLINE)
                 self.next()
                 self.forwardToNextQuote()
             elif self.current() == QUOTE:
                 break
             else:
                 tmp = self.current()
-                if tmp is None:
+                if tmp == -1:
                     raise ParseError('Got EOF while parsing a string')
 
                 # result += tmp
@@ -186,7 +200,7 @@ cdef class Parser:
         return self.guessExpression(expression)
 
     cdef parseNonArrayPropertyValue(self):
-        cdef unicode current = self.current()
+        cdef Py_UCS4 current = self.current()
         if current == CURLY_OPEN:
             return self.parseArray()
         elif current == QUOTE:
@@ -196,15 +210,15 @@ cdef class Parser:
         else:
             return self.parseUnknownExpression()
 
-    cdef bint isValidVarnameChar(self, unicode chr):
-        return chr and chr in VALID_NAME_CHAR
+    cdef bint isValidVarnameChar(self, Py_UCS4 c):
+        return c != -1 and c in VALID_NAME_CHAR
 
-    cdef parsePropertyName(self):
-        result = self.current()
+    cdef unicode parsePropertyName(self):
+        result = [self.current()]
         while(self.isValidVarnameChar(self.next())):
-            result += self.current()
+            result.append(self.current())
 
-        return result
+        return ''.join(result)
 
     cdef parseClassValue(self):
         result = {}
@@ -227,7 +241,7 @@ cdef class Parser:
         self.next()
         self.parseWhitespace()
 
-        while self.current() != CURLY_CLOSE:
+        while self.current() != -1 and self.current() != CURLY_CLOSE:
             result.append(self.parseNonArrayPropertyValue())
             self.parseWhitespace()
 
@@ -241,14 +255,17 @@ cdef class Parser:
         return result
 
     cdef void parseWhitespace(self):
-        try:
-            while self.isWhitespace():
-                self.next()
-        except IndexError:
-            pass
+        while self.isWhitespace():
+            self.next()
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef bint isWhitespace(self):
-        return self.raw[self.currentPosition] in ' \t\r\n' or ord(self.raw[self.currentPosition]) < 32
+        cdef Py_UCS4 c
+        if self.raw_len <= self.currentPosition:
+            return False
+        c = self.raw[self.currentPosition]
+        return c in ' \t\r\n' or ord(c) < 32
 
     cdef void parseProperty(self, dict context):
         value = None
@@ -330,14 +347,16 @@ cdef class Parser:
             return txt
 
     cdef parseTranslationString(self):
-        result = ''
+        cdef Py_UCS4 current
+
+        result = []
         assert self.current() == DOLLAR
         self.next()
 
         if self.raw[self.currentPosition: self.currentPosition + 3] != 'STR':
             raise ParseError('Invalid translation string beginning')
 
-        while self.current():
+        while self.current() != -1:
             current = self.current()
             if current in (SEMICOLON, COMMA, CURLY_CLOSE):
                 break
@@ -346,13 +365,13 @@ cdef class Parser:
                     self.parseWhitespace()
                     break
                 else:
-                    result += current
+                    result.append(current)
             self.nextWithoutCommentDetection()
 
         if self.current() not in (SEMICOLON, COMMA, CURLY_CLOSE):
             raise ParseError('Syntax error next translation string')
 
-        return self.translateString(result)
+        return self.translateString(''.join(result))
 
     def parse(self, raw, translations):
         self.currentPosition = 0
@@ -364,7 +383,8 @@ cdef class Parser:
 
         self.detectComment()
         self.parseWhitespace()
-        while self.current():
+
+        while self.current() != -1:
             self.parseProperty(result)
             self.parseWhitespace()
 
