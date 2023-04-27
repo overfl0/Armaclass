@@ -1,4 +1,6 @@
-from cpython cimport PyUnicode_FromUnicode
+# distutils: language = c++
+
+from cpython cimport PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND
 import string
 import sys
 
@@ -142,7 +144,7 @@ cdef class Parser:
         #cdef array.array result = array.array('u', [])
         #cdef array.array[unicode] result
         # cdef array.array[Py_UCS4] result = array.array('u', [])
-        cdef vector[Py_UNICODE] result
+        cdef vector[Py_UCS4] result
         result.reserve(50)
 
         self.ensure(self.current() == QUOTE)
@@ -150,11 +152,11 @@ cdef class Parser:
         while True:
             if self.weHaveADoubleQuote():
                 # result += self.current()
-                result.push_back(<Py_UNICODE>self.current())
+                result.push_back(self.current())
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
                 # result += '\n'
-                result.push_back(<Py_UNICODE>NEWLINE)
+                result.push_back(NEWLINE)
                 self.next()
                 self.forwardToNextQuote()
             elif self.current() == QUOTE:
@@ -173,7 +175,8 @@ cdef class Parser:
         self.nextWithoutCommentDetection()
         # return ''.join(result)
         # return result
-        unicode_obj = PyUnicode_FromUnicode(result.data(), result.size())
+        # unicode_obj = PyUnicode_FromUnicode(result.data(), result.size())
+        unicode_obj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
         return unicode_obj
 
     cdef guessExpression(self, unicode s):
@@ -224,7 +227,7 @@ cdef class Parser:
         return c != -1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     cdef unicode parsePropertyName(self):
-        cdef vector[Py_UNICODE] result
+        cdef vector[Py_UCS4] result
         result.reserve(50)
         result.push_back(self.current())
         # result = [self.current()]
@@ -232,7 +235,7 @@ cdef class Parser:
             result.push_back(self.current())
 
         # return ''.join(result)
-        return PyUnicode_FromUnicode(result.data(), result.size())
+        return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
 
     cdef parseClassValue(self):
         result = {}
