@@ -1,9 +1,10 @@
+from cpython cimport PyUnicode_FromUnicode
 import string
 import sys
 
 cimport cython
 from cpython cimport array
-import array
+from libcpp.vector cimport vector
 
 cdef Py_UCS4 QUOTE = '"'
 cdef Py_UCS4 SEMICOLON = ';'
@@ -50,7 +51,8 @@ cdef class Parser:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef detectComment(self):
+    @cython.exceptval(check=False)
+    cdef inline void detectComment(self):
         cdef int indexCommentEnd
         cdef int indexOfLinefeed
 
@@ -73,17 +75,19 @@ cdef class Parser:
                 indexCommentEnd = self.raw.find('*/', self.currentPosition)
                 self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + len('*/')
 
-    cdef Py_UCS4 next(self):
+    @cython.exceptval(check=False)
+    cdef inline Py_UCS4 next(self):
         self.currentPosition += 1
         self.detectComment()
         return self.current()
 
-    cdef nextWithoutCommentDetection(self):
+    cdef void nextWithoutCommentDetection(self):
         self.currentPosition += 1
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef Py_UCS4 current(self):
+    @cython.exceptval(check=False)
+    cdef inline Py_UCS4 current(self):
         if self.currentPosition >= self.raw_len:
             return -1
         return self.raw[self.currentPosition]
@@ -130,23 +134,27 @@ cdef class Parser:
             return maxsize
 
     cdef unicode parseString(self):
+        cdef Py_UCS4 *arr
         cdef Py_UCS4 tmp;
         # result = ''
-        result = []
+        #result = []
         #array.array[double] a = arg1
         #cdef array.array result = array.array('u', [])
         #cdef array.array[unicode] result
+        # cdef array.array[Py_UCS4] result = array.array('u', [])
+        cdef vector[Py_UNICODE] result
+        result.reserve(50)
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
         while True:
             if self.weHaveADoubleQuote():
                 # result += self.current()
-                result.append(self.current())
+                result.push_back(<Py_UNICODE>self.current())
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
                 # result += '\n'
-                result.append(NEWLINE)
+                result.push_back(<Py_UNICODE>NEWLINE)
                 self.next()
                 self.forwardToNextQuote()
             elif self.current() == QUOTE:
@@ -157,14 +165,16 @@ cdef class Parser:
                     raise ParseError('Got EOF while parsing a string')
 
                 # result += tmp
-                result.append(tmp)
+                result.push_back(<Py_UNICODE>tmp)
 
             self.nextWithoutCommentDetection()
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
-        return ''.join(result)
+        # return ''.join(result)
         # return result
+        unicode_obj = PyUnicode_FromUnicode(result.data(), result.size())
+        return unicode_obj
 
     cdef guessExpression(self, unicode s):
         s = s.strip()
@@ -210,15 +220,19 @@ cdef class Parser:
         else:
             return self.parseUnknownExpression()
 
-    cdef bint isValidVarnameChar(self, Py_UCS4 c):
-        return c != -1 and c in VALID_NAME_CHAR
+    cdef inline bint isValidVarnameChar(self, Py_UCS4 c):
+        return c != -1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     cdef unicode parsePropertyName(self):
-        result = [self.current()]
+        cdef vector[Py_UNICODE] result
+        result.reserve(50)
+        result.push_back(self.current())
+        # result = [self.current()]
         while(self.isValidVarnameChar(self.next())):
-            result.append(self.current())
+            result.push_back(self.current())
 
-        return ''.join(result)
+        # return ''.join(result)
+        return PyUnicode_FromUnicode(result.data(), result.size())
 
     cdef parseClassValue(self):
         result = {}
