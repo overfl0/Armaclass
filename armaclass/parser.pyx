@@ -1,8 +1,14 @@
 # distutils: language = c++
 
-from cpython cimport PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND
+from cpython cimport PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,\
+    PyUnicode_KIND, PyUnicode_READ, PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND, PyUnicode_1BYTE_DATA, \
+    PyUnicode_2BYTE_DATA, PyUnicode_4BYTE_DATA, PyUnicode_FindChar
 import string
 import sys
+
+cdef extern from *:
+    ctypedef unsigned char Py_UCS1  # uint8_t
+    ctypedef unsigned short Py_UCS2  # uint16_t
 
 cimport cython
 from cpython cimport array
@@ -33,6 +39,12 @@ cdef unicode FALSE_STR = 'false'
 cdef unicode VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
 cdef long long maxsize = sys.maxsize
+cdef tuple trues = ('true', 'truE', 'trUe', 'trUE', 'tRue', 'tRuE', 'tRUe', 'tRUE',
+                    'True', 'TruE', 'TrUe', 'TrUE', 'TRue', 'TRuE', 'TRUe', 'TRUE',)
+cdef tuple falses = ('FALSE', 'fALSE', 'FaLSE', 'faLSE', 'FAlSE', 'fAlSE', 'FalSE', 'falSE',
+                     'FALsE', 'fALsE', 'FaLsE', 'faLsE', 'FAlsE', 'fAlsE', 'FalsE', 'falsE',
+                     'FALSe', 'fALSe', 'FaLSe', 'faLSe', 'FAlSe', 'fAlSe', 'FalSe', 'falSe',
+                     'FALse', 'fALse', 'FaLse', 'faLse', 'FAlse', 'fAlse', 'False', 'false')
 
 class ParseError(RuntimeError):
     pass
@@ -43,6 +55,10 @@ cdef class Parser:
     cdef unicode raw
     cdef int raw_len
     cdef dict translations
+
+    cdef void *very_raw
+    cdef int very_raw_kind
+    cdef getter
 
     cdef void ensure(self, bint condition, unicode message='Error'):
         if condition:
@@ -61,21 +77,23 @@ cdef class Parser:
         if self.currentPosition >= self.raw_len:
             return
 
-        if self.raw[self.currentPosition] == SLASH:
+        # if self.raw[self.currentPosition] == SLASH:
+        if PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == SLASH:
             if self.currentPosition + 1 >= self.raw_len:
                 return
 
-            if self.raw[self.currentPosition + 1] == SLASH:
+            if PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 1) == SLASH:
                 # indexOfLinefeed = self.raw.index(NEWLINE, self.currentPosition)
-                indexOfLinefeed = self.raw.find(NEWLINE, self.currentPosition)
+                # indexOfLinefeed = self.raw.find(NEWLINE, self.currentPosition)
+                indexOfLinefeed = PyUnicode_FindChar(self.raw, NEWLINE, self.currentPosition, self.raw_len, 1)
                 if indexOfLinefeed == -1:
                     self.currentPosition = self.raw_len
                 else:
                     self.currentPosition = indexOfLinefeed
 
-            elif self.raw[self.currentPosition + 1] == ASTERISK:
+            elif PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 1) == ASTERISK:
                 indexCommentEnd = self.raw.find('*/', self.currentPosition)
-                self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + len('*/')
+                self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + 2 #+ len('*/')
 
     @cython.exceptval(check=False)
     cdef inline Py_UCS4 next(self):
@@ -83,7 +101,8 @@ cdef class Parser:
         self.detectComment()
         return self.current()
 
-    cdef void nextWithoutCommentDetection(self):
+    @cython.exceptval(check=False)
+    cdef inline void nextWithoutCommentDetection(self):
         self.currentPosition += 1
 
     @cython.boundscheck(False)
@@ -92,7 +111,17 @@ cdef class Parser:
     cdef inline Py_UCS4 current(self):
         if self.currentPosition >= self.raw_len:
             return -1
-        return self.raw[self.currentPosition]
+        # print(self.very_raw_kind)
+        if self.very_raw_kind == PyUnicode_1BYTE_KIND:
+            return (<Py_UCS1 *>self.very_raw)[self.currentPosition]
+        if self.very_raw_kind == PyUnicode_2BYTE_KIND:
+            return (<Py_UCS2 *> self.very_raw)[self.currentPosition]
+        if self.very_raw_kind == PyUnicode_4BYTE_KIND:
+            return (<Py_UCS4 *> self.very_raw)[self.currentPosition]
+        #
+        #
+        # return PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition)
+        # return self.raw[self.currentPosition]
         # try:
         #     return self.raw[self.currentPosition]
         # except IndexError:
@@ -100,10 +129,10 @@ cdef class Parser:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef bint weHaveADoubleQuote(self):
+    cdef inline bint weHaveADoubleQuote(self):
         # cdef unicode double_quote = '""'
         # return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
-        if self.raw_len >= self.currentPosition + 2 and self.raw[self.currentPosition] == QUOTE and self.raw[self.currentPosition + 1] == QUOTE:
+        if self.raw_len >= self.currentPosition + 2 and PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == QUOTE and PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 1) == QUOTE:
             return True
         return False
 
@@ -112,12 +141,12 @@ cdef class Parser:
     cdef bint weHaveAStringLineBreak(self):
         if (
             self.raw_len >= self.currentPosition + 6 and
-            self.raw[self.currentPosition] == QUOTE and
-            self.raw[self.currentPosition + 1] == SPACE and
-            self.raw[self.currentPosition + 2] == BACKSLASH and
-            self.raw[self.currentPosition + 3] == N and
-            self.raw[self.currentPosition + 4] == SPACE and
-            self.raw[self.currentPosition + 5] == QUOTE
+            PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == QUOTE and
+            PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 1) == SPACE and
+            PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 2) == BACKSLASH and
+            PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 3) == N and
+            PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 4) == SPACE and
+            PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 5) == QUOTE
         ):
             return True
         return False
@@ -136,7 +165,7 @@ cdef class Parser:
             return maxsize
 
     cdef unicode parseString(self):
-        cdef Py_UCS4 *arr
+        # cdef Py_UCS4 *arr
         cdef Py_UCS4 tmp;
         # result = ''
         #result = []
@@ -167,7 +196,7 @@ cdef class Parser:
                     raise ParseError('Got EOF while parsing a string')
 
                 # result += tmp
-                result.push_back(<Py_UNICODE>tmp)
+                result.push_back(tmp)
 
             self.nextWithoutCommentDetection()
 
@@ -238,7 +267,7 @@ cdef class Parser:
         return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
 
     cdef parseClassValue(self):
-        result = {}
+        cdef dict result = {}
 
         self.ensure(self.current() == CURLY_OPEN)
         self.next()
@@ -253,7 +282,7 @@ cdef class Parser:
         return result
 
     cdef parseArray(self):
-        result = []
+        cdef list result = []
         self.ensure(self.current() == CURLY_OPEN)
         self.next()
         self.parseWhitespace()
@@ -281,7 +310,7 @@ cdef class Parser:
         cdef Py_UCS4 c
         if self.raw_len <= self.currentPosition:
             return False
-        c = self.raw[self.currentPosition]
+        c = PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition)
         return c in ' \t\r\n' or ord(c) < 32
 
     cdef void parseProperty(self, dict context):
@@ -395,6 +424,18 @@ cdef class Parser:
         self.raw = raw
         self.raw_len = len(raw)
         self.translations = translations if translations else None
+
+        self.very_raw = PyUnicode_DATA(self.raw)
+        self.very_raw_kind = PyUnicode_KIND(self.raw)
+
+        # if self.very_raw_kind == PyUnicode_1BYTE_KIND:
+        #     self.getter = PyUnicode_1BYTE_DATA
+        # elif self.very_raw_kind == PyUnicode_2BYTE_KIND:
+        #     self.getter = PyUnicode_2BYTE_DATA
+        # elif self.very_raw_kind == PyUnicode_4BYTE_KIND:
+        #     self.getter = PyUnicode_4BYTE_DATA
+        # else:
+        #     raise RuntimeError('Unsupported unicode kind')
 
         result = {}
 
