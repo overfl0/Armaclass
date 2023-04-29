@@ -15,6 +15,7 @@ from cpython cimport array
 from libcpp.vector cimport vector
 
 cdef Py_UCS4 QUOTE = '"'
+cdef unicode QUOTE_U = '"'
 cdef Py_UCS4 SEMICOLON = ';'
 cdef Py_UCS4 COLON = ':'
 cdef Py_UCS4 EQUALS = '='
@@ -39,12 +40,6 @@ cdef unicode FALSE_STR = 'false'
 cdef unicode VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
 cdef long long maxsize = sys.maxsize
-cdef tuple trues = ('true', 'truE', 'trUe', 'trUE', 'tRue', 'tRuE', 'tRUe', 'tRUE',
-                    'True', 'TruE', 'TrUe', 'TrUE', 'TRue', 'TRuE', 'TRUe', 'TRUE',)
-cdef tuple falses = ('FALSE', 'fALSE', 'FaLSE', 'faLSE', 'FAlSE', 'fAlSE', 'FalSE', 'falSE',
-                     'FALsE', 'fALsE', 'FaLsE', 'faLsE', 'FAlsE', 'fAlsE', 'FalsE', 'falsE',
-                     'FALSe', 'fALSe', 'FaLSe', 'faLSe', 'FAlSe', 'fAlSe', 'FalSe', 'falSe',
-                     'FALse', 'fALse', 'FaLse', 'faLse', 'FAlse', 'fAlse', 'False', 'false')
 
 class ParseError(RuntimeError):
     pass
@@ -111,7 +106,7 @@ cdef class Parser:
     cdef inline Py_UCS4 current(self):
         if self.currentPosition >= self.raw_len:
             return -1
-        # print(self.very_raw_kind)
+
         if self.very_raw_kind == PyUnicode_1BYTE_KIND:
             return (<Py_UCS1 *>self.very_raw)[self.currentPosition]
         if self.very_raw_kind == PyUnicode_2BYTE_KIND:
@@ -122,22 +117,21 @@ cdef class Parser:
         #
         # return PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition)
         # return self.raw[self.currentPosition]
-        # try:
-        #     return self.raw[self.currentPosition]
-        # except IndexError:
-        #     return -1
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
+    @cython.exceptval(check=False)
     cdef inline bint weHaveADoubleQuote(self):
-        # cdef unicode double_quote = '""'
         # return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
-        if self.raw_len >= self.currentPosition + 2 and PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == QUOTE and PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 1) == QUOTE:
+        if self.raw_len >= self.currentPosition + 2 and \
+                PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == QUOTE and \
+                PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition + 1) == QUOTE:
             return True
         return False
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
+    @cython.exceptval(check=False)
     cdef bint weHaveAStringLineBreak(self):
         if (
             self.raw_len >= self.currentPosition + 6 and
@@ -153,10 +147,10 @@ cdef class Parser:
         #return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
 
     cdef void forwardToNextQuote(self):
-        try:
-            self.currentPosition = self.raw.index(QUOTE, self.currentPosition + 1)
-        except ValueError:
+        self.currentPosition = self.raw.find(QUOTE_U, self.currentPosition + 1)
+        if self.currentPosition == 1:
             self.currentPosition = self.raw_len
+
 
     cdef long long indexOfOrMaxSize(self, unicode haystack, unicode needle, int fromPos):
         try:
@@ -165,16 +159,9 @@ cdef class Parser:
             return maxsize
 
     cdef unicode parseString(self):
-        # cdef Py_UCS4 *arr
         cdef Py_UCS4 tmp;
-        # result = ''
-        #result = []
-        #array.array[double] a = arg1
-        #cdef array.array result = array.array('u', [])
-        #cdef array.array[unicode] result
-        # cdef array.array[Py_UCS4] result = array.array('u', [])
         cdef vector[Py_UCS4] result
-        result.reserve(50)
+        result.reserve(100)
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
@@ -202,9 +189,6 @@ cdef class Parser:
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
-        # return ''.join(result)
-        # return result
-        # unicode_obj = PyUnicode_FromUnicode(result.data(), result.size())
         unicode_obj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
         return unicode_obj
 
@@ -252,19 +236,20 @@ cdef class Parser:
         else:
             return self.parseUnknownExpression()
 
+    @cython.exceptval(check=False)
     cdef inline bint isValidVarnameChar(self, Py_UCS4 c):
         return c != -1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     cdef unicode parsePropertyName(self):
-        cdef vector[Py_UCS4] result
-        result.reserve(50)
-        result.push_back(self.current())
-        # result = [self.current()]
+        cdef int start = self.currentPosition
+        cdef int stop = self.currentPosition + 1
+
         while(self.isValidVarnameChar(self.next())):
-            result.push_back(self.current())
+            stop += 1
 
         # return ''.join(result)
-        return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
+        # return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
+        return self.raw[start:stop]
 
     cdef parseClassValue(self):
         cdef dict result = {}
@@ -300,12 +285,14 @@ cdef class Parser:
         self.next()
         return result
 
+    @cython.exceptval(check=False)
     cdef void parseWhitespace(self):
         while self.isWhitespace():
             self.next()
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
+    @cython.exceptval(check=False)
     cdef bint isWhitespace(self):
         cdef Py_UCS4 c
         if self.raw_len <= self.currentPosition:
@@ -452,3 +439,8 @@ cdef class Parser:
 def parse(raw, *, translations=None):
     p = Parser()
     return p.parse(raw, translations)
+
+
+# TODO: Try a function pointer for reading the correct unicode data
+# TODO: indexOfOrMaxSize may be optimized
+# TODO: Fix warnings
