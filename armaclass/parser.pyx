@@ -152,12 +152,6 @@ cdef class Parser:
             self.currentPosition = self.raw_len
 
 
-    cdef long long indexOfOrMaxSize(self, unicode haystack, unicode needle, Py_ssize_t fromPos):
-        try:
-            return haystack.index(needle, fromPos)
-        except ValueError:
-            return maxsize
-
     cdef unicode parseString(self):
         cdef Py_UCS4 tmp;
         cdef vector[Py_UCS4] result
@@ -213,15 +207,22 @@ cdef class Parser:
                 return s
 
     cdef parseUnknownExpression(self):
-        posOfExpressionEnd = min(
-            self.indexOfOrMaxSize(self.raw, SEMICOLON, self.currentPosition),
-            self.indexOfOrMaxSize(self.raw, CURLY_CLOSE, self.currentPosition),
-            self.indexOfOrMaxSize(self.raw, COMMA, self.currentPosition)
-        )
+        cdef Py_ssize_t pos
+        cdef Py_UCS4 c
 
-        expression = self.raw[self.currentPosition:posOfExpressionEnd]
-        self.ensure(posOfExpressionEnd != maxsize)
-        self.currentPosition = posOfExpressionEnd
+        pos = self.currentPosition
+        while True:
+            if pos >= self.raw_len:
+                self.ensure(pos < self.raw_len)  # Just to make it fail
+
+            c = PyUnicode_READ(self.very_raw_kind, self.very_raw, pos)
+            if c in ';},':
+                break
+
+            pos += 1
+
+        expression = self.raw[self.currentPosition:pos]
+        self.currentPosition = pos
 
         return self.guessExpression(expression)
 
@@ -244,7 +245,7 @@ cdef class Parser:
         cdef Py_ssize_t start = self.currentPosition
         cdef Py_ssize_t stop = self.currentPosition + 1
 
-        while(self.isValidVarnameChar(self.next())):
+        while self.isValidVarnameChar(self.next()):
             stop += 1
 
         # return ''.join(result)
@@ -442,4 +443,4 @@ def parse(raw, *, translations=None):
 
 
 # TODO: Try a function pointer for reading the correct unicode data
-# TODO: indexOfOrMaxSize may be optimized
+# TODO: Improve true/false
