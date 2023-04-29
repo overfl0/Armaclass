@@ -148,7 +148,7 @@ cdef class Parser:
 
     cdef void forwardToNextQuote(self):
         self.currentPosition = self.raw.find(QUOTE_U, self.currentPosition + 1)
-        if self.currentPosition == 1:
+        if self.currentPosition == -1:
             self.currentPosition = self.raw_len
 
 
