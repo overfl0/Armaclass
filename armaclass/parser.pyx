@@ -46,9 +46,9 @@ class ParseError(RuntimeError):
 
 
 cdef class Parser:
-    cdef int currentPosition
+    cdef Py_ssize_t currentPosition
     cdef unicode raw
-    cdef int raw_len
+    cdef Py_ssize_t raw_len
     cdef dict translations
 
     cdef void *very_raw
@@ -66,8 +66,8 @@ cdef class Parser:
     @cython.wraparound(False)
     @cython.exceptval(check=False)
     cdef inline void detectComment(self):
-        cdef int indexCommentEnd
-        cdef int indexOfLinefeed
+        cdef Py_ssize_t indexCommentEnd
+        cdef Py_ssize_t indexOfLinefeed
 
         if self.currentPosition >= self.raw_len:
             return
@@ -152,7 +152,7 @@ cdef class Parser:
             self.currentPosition = self.raw_len
 
 
-    cdef long long indexOfOrMaxSize(self, unicode haystack, unicode needle, int fromPos):
+    cdef long long indexOfOrMaxSize(self, unicode haystack, unicode needle, Py_ssize_t fromPos):
         try:
             return haystack.index(needle, fromPos)
         except ValueError:
@@ -241,8 +241,8 @@ cdef class Parser:
         return c != -1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     cdef unicode parsePropertyName(self):
-        cdef int start = self.currentPosition
-        cdef int stop = self.currentPosition + 1
+        cdef Py_ssize_t start = self.currentPosition
+        cdef Py_ssize_t stop = self.currentPosition + 1
 
         while(self.isValidVarnameChar(self.next())):
             stop += 1
@@ -443,4 +443,3 @@ def parse(raw, *, translations=None):
 
 # TODO: Try a function pointer for reading the correct unicode data
 # TODO: indexOfOrMaxSize may be optimized
-# TODO: Fix warnings
