@@ -55,17 +55,15 @@ cdef class Parser:
     cdef int very_raw_kind
     cdef getter
 
-    cdef void ensure(self, bint condition, unicode message='Error'):
+    cdef ensure(self, bint condition, unicode message='Error'):
         if condition:
             return
 
         raise ParseError('{} at position {}. Before: {}'.format(
             message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     @cython.exceptval(check=False)
-    cdef inline void detectComment(self):
+    cdef inline void detectComment(self) noexcept:
         cdef Py_ssize_t indexCommentEnd
         cdef Py_ssize_t indexOfLinefeed
 
@@ -91,19 +89,17 @@ cdef class Parser:
                 self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + 2 #+ len('*/')
 
     @cython.exceptval(check=False)
-    cdef inline Py_UCS4 next(self):
+    cdef inline Py_UCS4 next(self) noexcept:
         self.currentPosition += 1
         self.detectComment()
         return self.current()
 
     @cython.exceptval(check=False)
-    cdef inline void nextWithoutCommentDetection(self):
+    cdef inline void nextWithoutCommentDetection(self) noexcept:
         self.currentPosition += 1
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     @cython.exceptval(check=False)
-    cdef inline Py_UCS4 current(self):
+    cdef inline Py_UCS4 current(self) noexcept:
         if self.currentPosition >= self.raw_len:
             return -1
 
@@ -118,10 +114,8 @@ cdef class Parser:
         # return PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition)
         # return self.raw[self.currentPosition]
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     @cython.exceptval(check=False)
-    cdef inline bint weHaveADoubleQuote(self):
+    cdef inline bint weHaveADoubleQuote(self) noexcept:
         # return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
         if self.raw_len >= self.currentPosition + 2 and \
                 PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == QUOTE and \
@@ -129,10 +123,8 @@ cdef class Parser:
             return True
         return False
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     @cython.exceptval(check=False)
-    cdef bint weHaveAStringLineBreak(self):
+    cdef bint weHaveAStringLineBreak(self) noexcept:
         if (
             self.raw_len >= self.currentPosition + 6 and
             PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition) == QUOTE and
@@ -146,7 +138,7 @@ cdef class Parser:
         return False
         #return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
 
-    cdef void forwardToNextQuote(self):
+    cdef void forwardToNextQuote(self) noexcept:
         self.currentPosition = self.raw.find(QUOTE_U, self.currentPosition + 1)
         if self.currentPosition == -1:
             self.currentPosition = self.raw_len
@@ -259,10 +251,10 @@ cdef class Parser:
             return self.parseUnknownExpression()
 
     @cython.exceptval(check=False)
-    cdef inline bint isValidVarnameChar(self, Py_UCS4 c):
+    cdef inline bint isValidVarnameChar(self, Py_UCS4 c) noexcept:
         return c != -1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
-    cdef unicode parsePropertyName(self):
+    cdef unicode parsePropertyName(self) noexcept:
         cdef Py_ssize_t start = self.currentPosition
         cdef Py_ssize_t stop = self.currentPosition + 1
 
@@ -272,6 +264,8 @@ cdef class Parser:
         # return ''.join(result)
         # return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
         return self.raw[start:stop]
+
+    def __pycharm__display_workaround_(self): pass
 
     cdef parseClassValue(self):
         cdef dict result = {}
@@ -308,19 +302,20 @@ cdef class Parser:
         return result
 
     @cython.exceptval(check=False)
-    cdef void parseWhitespace(self):
+    cdef void parseWhitespace(self) noexcept:
         while self.isWhitespace():
             self.next()
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     @cython.exceptval(check=False)
-    cdef bint isWhitespace(self):
+    cdef bint isWhitespace(self) noexcept:
         cdef Py_UCS4 c
         if self.raw_len <= self.currentPosition:
             return False
+
         c = PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition)
         return c in ' \t\r\n' or ord(c) < 32
+
+    def __pycharm__display_workaround_(self): pass
 
     cdef void parseProperty(self, dict context):
         value = None
