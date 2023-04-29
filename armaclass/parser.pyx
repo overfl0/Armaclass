@@ -187,11 +187,32 @@ cdef class Parser:
         return unicode_obj
 
     cdef guessExpression(self, unicode s):
+        cdef int slen
         s = s.strip()
+        slen = len(s)
 
-        if s[:4].lower() == TRUE_STR:
+        # cdef void *s_raw
+        # cdef int s_raw_kind
+        #
+        # s_raw = PyUnicode_DATA(s)
+        # s_raw_kind = PyUnicode_KIND(s)
+        #
+        # if slen == 4 and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 0) in 'tT' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 1) in 'rR' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 2) in 'uU' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 3) in 'eE':
+        #     return True
+        # elif slen == 5 and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 0) in 'fF' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 1) in 'aA' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 2) in 'lL' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 3) in 'sS' and \
+        #         PyUnicode_READ(s_raw_kind, s_raw, 4) in 'eE':
+        #     return False
+        if slen == 4 and s.lower() == TRUE_STR:
             return True
-        elif s[:5].lower() == FALSE_STR:
+        elif slen == 5 and s.lower() == FALSE_STR:
             return False
         elif s.startswith('0x'):
             return int(s, 16)
@@ -443,4 +464,3 @@ def parse(raw, *, translations=None):
 
 
 # TODO: Try a function pointer for reading the correct unicode data
-# TODO: Improve true/false
