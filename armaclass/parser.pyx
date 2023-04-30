@@ -3,15 +3,12 @@
 from cpython cimport PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,\
     PyUnicode_KIND, PyUnicode_READ, PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND, PyUnicode_1BYTE_DATA, \
     PyUnicode_2BYTE_DATA, PyUnicode_4BYTE_DATA, PyUnicode_FindChar
-import string
-import sys
 
 cdef extern from *:
     ctypedef unsigned char Py_UCS1  # uint8_t
     ctypedef unsigned short Py_UCS2  # uint16_t
 
 cimport cython
-from cpython cimport array
 from libcpp.vector cimport vector
 
 cdef Py_UCS4 QUOTE = '"'
@@ -34,12 +31,7 @@ cdef Py_UCS4 BACKSLASH = '\\'
 cdef Py_UCS4 N = 'n'
 
 cdef Py_UCS4 NEWLINE = '\n'
-cdef unicode TRUE_STR = 'true'
-cdef unicode FALSE_STR = 'false'
 
-cdef unicode VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
-
-cdef long long maxsize = sys.maxsize
 
 class ParseError(RuntimeError):
     pass
@@ -179,7 +171,7 @@ cdef class Parser:
         return unicode_obj
 
     cdef guessExpression(self, unicode s):
-        cdef int slen
+        cdef Py_ssize_t slen
         s = s.strip()
         slen = len(s)
 
@@ -202,9 +194,9 @@ cdef class Parser:
         #         PyUnicode_READ(s_raw_kind, s_raw, 3) in 'sS' and \
         #         PyUnicode_READ(s_raw_kind, s_raw, 4) in 'eE':
         #     return False
-        if slen == 4 and s.lower() == TRUE_STR:
+        if slen == 4 and s.lower() == 'true':
             return True
-        elif slen == 5 and s.lower() == FALSE_STR:
+        elif slen == 5 and s.lower() == 'false':
             return False
         elif s.startswith('0x'):
             return int(s, 16)
@@ -265,8 +257,6 @@ cdef class Parser:
         # return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
         return self.raw[start:stop]
 
-    def __pycharm__display_workaround_(self): pass
-
     cdef parseClassValue(self):
         cdef dict result = {}
 
@@ -314,8 +304,6 @@ cdef class Parser:
 
         c = PyUnicode_READ(self.very_raw_kind, self.very_raw, self.currentPosition)
         return c in ' \t\r\n' or ord(c) < 32
-
-    def __pycharm__display_workaround_(self): pass
 
     cdef void parseProperty(self, dict context):
         value = None
