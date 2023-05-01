@@ -1,6 +1,9 @@
 *.pyc
 *.c
+*.cpp
+*.html
 *.pyd
+*.prof
 .idea
 build
 dist
