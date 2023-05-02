@@ -157,7 +157,7 @@ cdef class Parser:
                 break
             else:
                 tmp = self.current()
-                if tmp == -1:
+                if tmp == <Py_UCS4>-1:
                     raise ParseError('Got EOF while parsing a string')
 
                 # result += tmp
@@ -394,7 +394,7 @@ cdef class Parser:
         if self.raw[self.currentPosition: self.currentPosition + 3] != 'STR':
             raise ParseError('Invalid translation string beginning')
 
-        while self.current() != -1:
+        while self.current() != <Py_UCS4>-1:
             current = self.current()
             if current in (SEMICOLON, COMMA, CURLY_CLOSE):
                 break
@@ -434,7 +434,7 @@ cdef class Parser:
         self.detectComment()
         self.parseWhitespace()
 
-        while self.current() != -1:
+        while self.current() != <Py_UCS4>-1:
             self.parseProperty(result)
             self.parseWhitespace()
 
