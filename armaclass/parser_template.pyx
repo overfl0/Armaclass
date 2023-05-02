@@ -231,7 +231,7 @@ cdef class Parser_UCS_TYPE:
 
     @cython.exceptval(check=False)
     cdef inline bint isValidVarnameChar(self, Py_UCS4 c) noexcept:
-        return c != -1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
+        return c != <Py_UCS4>-1 and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     cdef unicode parsePropertyName(self) noexcept:
         cdef Py_ssize_t start = self.currentPosition
