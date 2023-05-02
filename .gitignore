@@ -3,6 +3,7 @@
 *.cpp
 *.html
 *.pyd
+*.so
 *.prof
 .idea
 build
