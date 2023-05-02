@@ -1,12 +1,34 @@
 import os
 
-from setuptools import setup
+from setuptools import setup, Extension
 from Cython.Build import cythonize
 
 # read the contents of your README file
 this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+
+
+with open(os.path.join(this_directory, 'armaclass', 'parser_template.pyx')) as f:
+    contents = f.read()
+
+    with open(os.path.join(this_directory, 'armaclass', 'parser_ucs1.pyx'), 'w') as fw:
+        fw.write(contents.replace('UCS_TYPE', 'UCS1'))
+
+    with open(os.path.join(this_directory, 'armaclass', 'parser_ucs2.pyx'), 'w') as fw:
+        fw.write(contents.replace('UCS_TYPE', 'UCS2'))
+
+    with open(os.path.join(this_directory, 'armaclass', 'parser_ucs4.pyx'), 'w') as fw:
+        fw.write(contents.replace('UCS_TYPE', 'UCS4'))
+
+
+extensions = [
+    Extension('armaclass.parser', [os.path.join('armaclass', 'parser.pyx')]),
+    Extension('armaclass.parser_ucs1', [os.path.join('armaclass', 'parser_ucs1.pyx')]),
+    Extension('armaclass.parser_ucs2', [os.path.join('armaclass', 'parser_ucs2.pyx')]),
+    Extension('armaclass.parser_ucs4', [os.path.join('armaclass', 'parser_ucs4.pyx')]),
+]
+
 
 setup(
     name='armaclass',
@@ -36,7 +58,7 @@ setup(
 
         'License :: OSI Approved :: MIT License',
     ],
-    ext_modules=cythonize(os.path.join('armaclass', 'parser.pyx'),
+    ext_modules=cythonize(extensions,
                           compiler_directives={'language_level': '3'},
                           annotate=True),
 )
