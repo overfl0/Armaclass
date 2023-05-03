@@ -102,7 +102,7 @@ cdef class Parser_UCS_TYPE:
         return False
 
     @cython.exceptval(check=False)
-    cdef bint weHaveAStringLineBreak(self) noexcept:
+    cdef inline bint weHaveAStringLineBreak(self) noexcept:
         if (
             self.raw_len >= self.currentPosition + 6 and
             (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition] == QUOTE and
@@ -279,12 +279,12 @@ cdef class Parser_UCS_TYPE:
         return result
 
     @cython.exceptval(check=False)
-    cdef void parseWhitespace(self) noexcept:
+    cdef inline void parseWhitespace(self) noexcept:
         while self.isWhitespace():
             self.next()
 
     @cython.exceptval(check=False)
-    cdef bint isWhitespace(self) noexcept:
+    cdef inline bint isWhitespace(self) noexcept:
         cdef Py_UCS4 c
         if self.raw_len <= self.currentPosition:
             return False
