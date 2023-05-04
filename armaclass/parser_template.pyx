@@ -1,8 +1,7 @@
 # distutils: language = c++
 
-from cpython cimport PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,\
-    PyUnicode_KIND, PyUnicode_READ, PyUnicode_1BYTE_KIND, PyUnicode_2BYTE_KIND, PyUnicode_1BYTE_DATA, \
-    PyUnicode_2BYTE_DATA, PyUnicode_4BYTE_DATA, PyUnicode_FindChar
+from cpython cimport PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA, \
+    PyUnicode_KIND, PyUnicode_FindChar
 
 from .errors import ParseError
 
@@ -43,7 +42,6 @@ cdef class Parser_UCS_TYPE:
 
     cdef void *very_raw
     cdef int very_raw_kind
-    cdef getter
 
     cdef ensure(self, bint condition, unicode message='Error'):
         if condition:
@@ -131,11 +129,9 @@ cdef class Parser_UCS_TYPE:
         self.nextWithoutCommentDetection()
         while True:
             if self.weHaveADoubleQuote():
-                # result += self.current()
                 result.push_back(self.current())
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
-                # result += '\n'
                 result.push_back(NEWLINE)
                 self.next()
                 self.forwardToNextQuote()
@@ -146,7 +142,6 @@ cdef class Parser_UCS_TYPE:
                 if tmp == <Py_UCS4>-1:
                     raise ParseError('Got EOF while parsing a string')
 
-                # result += tmp
                 result.push_back(tmp)
 
             self.nextWithoutCommentDetection()
@@ -161,25 +156,6 @@ cdef class Parser_UCS_TYPE:
         s = s.strip()
         slen = len(s)
 
-        # cdef void *s_raw
-        # cdef int s_raw_kind
-        #
-        # s_raw = PyUnicode_DATA(s)
-        # s_raw_kind = PyUnicode_KIND(s)
-        #
-        # if slen == 4 and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 0) in 'tT' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 1) in 'rR' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 2) in 'uU' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 3) in 'eE':
-        #     return True
-        # elif slen == 5 and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 0) in 'fF' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 1) in 'aA' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 2) in 'lL' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 3) in 'sS' and \
-        #         PyUnicode_READ(s_raw_kind, s_raw, 4) in 'eE':
-        #     return False
         if slen == 4 and s.lower() == 'true':
             return True
         elif slen == 5 and s.lower() == 'false':
@@ -206,7 +182,6 @@ cdef class Parser_UCS_TYPE:
             if pos >= self.raw_len:
                 self.ensure(pos < self.raw_len)  # Just to make it fail
 
-            # c = PyUnicode_READ(self.very_raw_kind, self.very_raw, pos)
             c = (<Py_UCS_TYPE *> self.very_raw)[pos]
             if c in ';},':
                 break
@@ -240,8 +215,6 @@ cdef class Parser_UCS_TYPE:
         while self.isValidVarnameChar(self.next()):
             stop += 1
 
-        # return ''.join(result)
-        # return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
         return self.raw[start:stop]
 
     cdef parseClassValue(self):
@@ -406,15 +379,6 @@ cdef class Parser_UCS_TYPE:
 
         self.very_raw = PyUnicode_DATA(self.raw)
         self.very_raw_kind = PyUnicode_KIND(self.raw)
-
-        # if self.very_raw_kind == PyUnicode_1BYTE_KIND:
-        #     self.getter = PyUnicode_1BYTE_DATA
-        # elif self.very_raw_kind == PyUnicode_2BYTE_KIND:
-        #     self.getter = PyUnicode_2BYTE_DATA
-        # elif self.very_raw_kind == PyUnicode_4BYTE_KIND:
-        #     self.getter = PyUnicode_4BYTE_DATA
-        # else:
-        #     raise RuntimeError('Unsupported unicode kind')
 
         result = {}
 
