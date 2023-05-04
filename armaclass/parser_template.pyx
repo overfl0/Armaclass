@@ -36,42 +36,42 @@ cdef Py_UCS4 NEWLINE = '\n'
 
 cdef class Parser_UCS_TYPE:
     cdef Py_ssize_t currentPosition
-    cdef unicode raw
-    cdef Py_ssize_t raw_len
+    cdef unicode input_string
+    cdef Py_ssize_t input_string_len
     cdef dict translations
 
-    cdef void *very_raw
-    cdef int very_raw_kind
+    cdef void *data
+    cdef int data_kind
 
     cdef ensure(self, bint condition, unicode message='Error'):
         if condition:
             return
 
         raise ParseError('{} at position {}. Before: {}'.format(
-            message, self.currentPosition, self.raw[self.currentPosition:self.currentPosition + 50]))
+            message, self.currentPosition, self.input_string[self.currentPosition:self.currentPosition + 50]))
 
     @cython.exceptval(check=False)
     cdef inline void detectComment(self) noexcept:
         cdef Py_ssize_t indexCommentEnd
         cdef Py_ssize_t indexOfLinefeed
 
-        if self.currentPosition >= self.raw_len:
+        if self.currentPosition >= self.input_string_len:
             return
 
-        if (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition] == SLASH:
-            if self.currentPosition + 1 >= self.raw_len:
+        if (<Py_UCS_TYPE *>self.data)[self.currentPosition] == SLASH:
+            if self.currentPosition + 1 >= self.input_string_len:
                 return
 
-            if (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 1] == SLASH:
-                indexOfLinefeed = PyUnicode_FindChar(self.raw, NEWLINE, self.currentPosition, self.raw_len, 1)
+            if (<Py_UCS_TYPE *>self.data)[self.currentPosition + 1] == SLASH:
+                indexOfLinefeed = PyUnicode_FindChar(self.input_string, NEWLINE, self.currentPosition, self.input_string_len, 1)
                 if indexOfLinefeed == -1:
-                    self.currentPosition = self.raw_len
+                    self.currentPosition = self.input_string_len
                 else:
                     self.currentPosition = indexOfLinefeed
 
-            elif (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 1] == ASTERISK:
-                indexCommentEnd = self.raw.find('*/', self.currentPosition)
-                self.currentPosition = self.raw_len if indexCommentEnd == -1 else indexCommentEnd + 2 #+ len('*/')
+            elif (<Py_UCS_TYPE *>self.data)[self.currentPosition + 1] == ASTERISK:
+                indexCommentEnd = self.input_string.find('*/', self.currentPosition)
+                self.currentPosition = self.input_string_len if indexCommentEnd == -1 else indexCommentEnd + 2 #+ len('*/')
 
     @cython.exceptval(check=False)
     cdef inline Py_UCS4 next(self) noexcept:
@@ -85,39 +85,39 @@ cdef class Parser_UCS_TYPE:
 
     @cython.exceptval(check=False)
     cdef inline Py_UCS4 current(self) noexcept:
-        if self.currentPosition >= self.raw_len:
+        if self.currentPosition >= self.input_string_len:
             return -1
 
-        return (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition]
+        return (<Py_UCS_TYPE *>self.data)[self.currentPosition]
 
     @cython.exceptval(check=False)
     cdef inline bint weHaveADoubleQuote(self) noexcept:
         # return self.raw[self.currentPosition:self.currentPosition + 2] == double_quote
-        if self.raw_len >= self.currentPosition + 2 and \
-                (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition] == QUOTE and \
-                (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 1] == QUOTE:
+        if self.input_string_len >= self.currentPosition + 2 and \
+                (<Py_UCS_TYPE *>self.data)[self.currentPosition] == QUOTE and \
+                (<Py_UCS_TYPE *>self.data)[self.currentPosition + 1] == QUOTE:
             return True
         return False
 
     @cython.exceptval(check=False)
     cdef inline bint weHaveAStringLineBreak(self) noexcept:
         if (
-            self.raw_len >= self.currentPosition + 6 and
-            (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition] == QUOTE and
-            (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 1] == SPACE and
-            (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 2] == BACKSLASH and
-            (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 3] == N and
-            (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 4] == SPACE and
-            (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition + 5] == QUOTE
+            self.input_string_len >= self.currentPosition + 6 and
+            (<Py_UCS_TYPE *>self.data)[self.currentPosition] == QUOTE and
+            (<Py_UCS_TYPE *>self.data)[self.currentPosition + 1] == SPACE and
+            (<Py_UCS_TYPE *>self.data)[self.currentPosition + 2] == BACKSLASH and
+            (<Py_UCS_TYPE *>self.data)[self.currentPosition + 3] == N and
+            (<Py_UCS_TYPE *>self.data)[self.currentPosition + 4] == SPACE and
+            (<Py_UCS_TYPE *>self.data)[self.currentPosition + 5] == QUOTE
         ):
             return True
         return False
         #return self.raw[self.currentPosition:self.currentPosition + 6] == '" \\n "'
 
     cdef void forwardToNextQuote(self) noexcept:
-        self.currentPosition = self.raw.find(QUOTE_U, self.currentPosition + 1)
+        self.currentPosition = self.input_string.find(QUOTE_U, self.currentPosition + 1)
         if self.currentPosition == -1:
-            self.currentPosition = self.raw_len
+            self.currentPosition = self.input_string_len
 
 
     cdef unicode parseString(self):
@@ -179,16 +179,16 @@ cdef class Parser_UCS_TYPE:
 
         pos = self.currentPosition
         while True:
-            if pos >= self.raw_len:
-                self.ensure(pos < self.raw_len)  # Just to make it fail
+            if pos >= self.input_string_len:
+                self.ensure(pos < self.input_string_len)  # Just to make it fail
 
-            c = (<Py_UCS_TYPE *> self.very_raw)[pos]
+            c = (<Py_UCS_TYPE *> self.data)[pos]
             if c in ';},':
                 break
 
             pos += 1
 
-        expression = self.raw[self.currentPosition:pos]
+        expression = self.input_string[self.currentPosition:pos]
         self.currentPosition = pos
 
         return self.guessExpression(expression)
@@ -215,7 +215,7 @@ cdef class Parser_UCS_TYPE:
         while self.isValidVarnameChar(self.next()):
             stop += 1
 
-        return self.raw[start:stop]
+        return self.input_string[start:stop]
 
     cdef parseClassValue(self):
         cdef dict result = {}
@@ -259,10 +259,10 @@ cdef class Parser_UCS_TYPE:
     @cython.exceptval(check=False)
     cdef inline bint isWhitespace(self) noexcept:
         cdef Py_UCS4 c
-        if self.raw_len <= self.currentPosition:
+        if self.input_string_len <= self.currentPosition:
             return False
 
-        c = (<Py_UCS_TYPE *>self.very_raw)[self.currentPosition]
+        c = (<Py_UCS_TYPE *>self.data)[self.currentPosition]
         return c in ' \t\r\n' or ord(c) < 32
 
     cdef void parseProperty(self, dict context):
@@ -321,9 +321,9 @@ cdef class Parser_UCS_TYPE:
 
         elif current == SLASH:
             if self.next() == SLASH:
-                self.currentPosition = self.raw.find('\n', self.currentPosition)
+                self.currentPosition = self.input_string.find('\n', self.currentPosition)
                 if self.currentPosition == -1:
-                    self.currentPosition = self.raw_len
+                    self.currentPosition = self.input_string_len
 
             else:
                 raise ParseError('Unexpected value at pos {}'.format(self.currentPosition))
@@ -350,7 +350,7 @@ cdef class Parser_UCS_TYPE:
         assert self.current() == DOLLAR
         self.next()
 
-        if self.raw[self.currentPosition: self.currentPosition + 3] != 'STR':
+        if self.input_string[self.currentPosition: self.currentPosition + 3] != 'STR':
             raise ParseError('Invalid translation string beginning')
 
         while self.current() != <Py_UCS4>-1:
@@ -372,12 +372,12 @@ cdef class Parser_UCS_TYPE:
 
     def parse(self, raw, translations):
         self.currentPosition = 0
-        self.raw = raw
-        self.raw_len = len(raw)
+        self.input_string = raw
+        self.input_string_len = len(raw)
         self.translations = translations if translations else None
 
-        self.very_raw = PyUnicode_DATA(self.raw)
-        self.very_raw_kind = PyUnicode_KIND(self.raw)
+        self.data = PyUnicode_DATA(self.input_string)
+        self.data_kind = PyUnicode_KIND(self.input_string)
 
         result = {}
 
