@@ -321,9 +321,8 @@ cdef class Parser_UCS_TYPE:
 
         elif current == SLASH:
             if self.next() == SLASH:
-                try:
-                    self.currentPosition = self.raw.index('\n', self.currentPosition)
-                except ValueError:
+                self.currentPosition = self.raw.find('\n', self.currentPosition)
+                if self.currentPosition == -1:
                     self.currentPosition = self.raw_len
 
             else:
@@ -339,10 +338,10 @@ cdef class Parser_UCS_TYPE:
         self.next()
 
     cdef unicode translateString(self, txt: unicode):
-        try:
-            return self.translations[txt]
-        except KeyError:
-            return txt
+        cdef unicode translated = self.translations.get(txt)
+        if translated is not None:
+            return translated
+        return txt
 
     cdef parseTranslationString(self):
         cdef Py_UCS4 current
