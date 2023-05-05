@@ -1,10 +1,19 @@
 # distutils: language = c++
 ## cython: profile=True
+try:
+    import cython
+except ModuleNotFoundError:
+    from .cython_stubs import (cython,
+                               PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
+                               PyUnicode_KIND, PyUnicode_READ,
+                               vector)
 
-import cython
-from cython.cimports.cpython import (PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA, PyUnicode_KIND,
-                                     PyUnicode_READ)
-from cython.cimports.libcpp.vector import vector
+
+if cython.compiled:
+    from cython.cimports.cpython import (PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
+                                         PyUnicode_KIND, PyUnicode_READ)
+    from cython.cimports.libcpp.vector import vector
+
 
 # QUOTE: cython.Py_UCS4 = '"'
 # SEMICOLON: cython.Py_UCS4 = ';'
@@ -130,19 +139,19 @@ class Parser:
     @cython.cfunc
     @cython.inline
     def parseString(self) -> cython.unicode:
-        result: vector[cython.Py_UCS4]
+        result: vector[cython.Py_UCS4]# = vector[cython.Py_UCS4]()
+        if not cython.compiled:
+            result = vector()
         result.reserve(100)
 
         self.ensure(self.current() == '"')
         self.nextWithoutCommentDetection()
         while True:
             if self.weHaveADoubleQuote():
-                # result += self.current()
                 result.push_back(self.current())
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
                 result.push_back('\n')
-                # result += '\n'
                 self.next()
                 self.forwardToNextQuote()
             elif self.current() == cython.cast(cython.Py_UCS4, '"'):
@@ -152,7 +161,6 @@ class Parser:
                 if tmp == cython.cast(cython.Py_UCS4, -1):
                     raise ParseError('Got EOF while parsing a string')
 
-                # result += cython.cast(cython.Py_UCS4, self.current())
                 result.push_back(self.current())
 
             self.nextWithoutCommentDetection()
@@ -391,7 +399,7 @@ class Parser:
                     result.append(current)
             self.nextWithoutCommentDetection()
 
-        if self.current() not in ';,}':
+        if self.current() == cython.cast(cython.Py_UCS4, -1) or self.current() not in ';,}':
             raise ParseError('Syntax error next translation string')
 
         return self.translateString(''.join(result))
