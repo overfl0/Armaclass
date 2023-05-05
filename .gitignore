@@ -1,5 +1,10 @@
 *.pyc
 *.c
+*.cpp
+*.html
+*.pyd
+*.so
+*.prof
 .idea
 build
 dist
@@ -7,3 +12,4 @@ dist
 MANIFEST
 .pytest_cache
 *.prof
+armaclass/parser_ucs*
