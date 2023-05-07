@@ -27,6 +27,8 @@ def _common_test_(python, sqf):
 @pytest.mark.parametrize('python, sqf', [
     ({'var': 'value'}, 'var="value";'),
     ({'var': ['value']}, 'var[]=\n{\n    "value"\n};'),
+    ({'var': 'value1\nvalue2\nvalue3'}, 'var="value1" \\n "value2" \\n "value3";'),
+    ({'var': '"value1"\n"value2"\nvalue3'}, 'var="""value1""" \\n """value2""" \\n "value3";'),
 ])
 def test_string_generation(python, sqf):
     _common_test_(python, sqf)
