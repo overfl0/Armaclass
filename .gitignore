@@ -13,3 +13,4 @@ MANIFEST
 .pytest_cache
 *.prof
 armaclass/parser_ucs*
+wheelhouse

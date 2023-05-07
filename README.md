@@ -71,6 +71,13 @@ facilitate porting. Those (internal) names may be changed in the future.
 - `ptw -n` if you want `pytest` to automatically be called whenever
   you save any file from the project
 
+### Testing the cythonized wheels in cibuildwheel
+
+    cmd /C "set CIBW_BEFORE_BUILD=pip install -r requirements-cython.txt && set CIBW_SKIP=pp* && set CIBW_TEST_REQUIRES=pytest && set CIBW_TEST_COMMAND=pytest {project} && cibuildwheel --platform windows"
+
+    # On linux:
+    CIBW_BEFORE_BUILD='pip install -r requirements-cython.txt' CIBW_SKIP='pp*' CIBW_TEST_REQUIRES=pytest CIBW_TEST_COMMAND='pytest {project}' cibuildwheel --platform linux
+
 ## Contributing
 If you feel something is missing or plain wrong, feel free to submit a Pull Request. You are encouraged to submit the
 same PR/suggestion to the original [arma-class-parser](https://github.com/Fusselwurm/arma-class-parser) as well.
