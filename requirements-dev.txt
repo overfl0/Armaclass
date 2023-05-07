@@ -1,0 +1,4 @@
+-r requirements-cython.txt
+pytest
+pytest-watch
+twine

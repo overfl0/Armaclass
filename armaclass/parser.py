@@ -1,5 +1,4 @@
 # distutils: language = c++
-## cython: profile=True
 try:
     import cython
 except ModuleNotFoundError:
@@ -8,12 +7,15 @@ except ModuleNotFoundError:
                                PyUnicode_KIND, PyUnicode_READ,
                                vector)
 
-
 if cython.compiled:
     from cython.cimports.cpython import (PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
                                          PyUnicode_KIND, PyUnicode_READ)
     from cython.cimports.libcpp.vector import vector
-
+else:
+    from .cython_stubs import (cython,
+                               PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
+                               PyUnicode_KIND, PyUnicode_READ,
+                               vector)
 
 # QUOTE: cython.Py_UCS4 = '"'
 # SEMICOLON: cython.Py_UCS4 = ';'
@@ -246,7 +248,7 @@ class Parser:
 
     @cython.cfunc
     def parseClassValue(self):
-        result: cython.dict = {}
+        result: dict = {}
 
         self.ensure(self.current() == '{')
         self.next()
@@ -299,7 +301,7 @@ class Parser:
         return c in ' \t\r\n' or ord(c) < 32
 
     @cython.cfunc
-    def parseProperty(self, context: cython.dict) -> cython.void:
+    def parseProperty(self, context: dict) -> cython.void:
         value = None
         name = self.parsePropertyName()
 

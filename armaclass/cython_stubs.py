@@ -1,6 +1,5 @@
 from . import Shadow as cython
 
-cython.dict = dict
 PyUnicode_4BYTE_KIND = None
 cython.cast = lambda type_, value: value
 

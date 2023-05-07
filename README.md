@@ -65,7 +65,7 @@ facilitate porting. Those (internal) names may be changed in the future.
 
 ### Making code changes 
 - Create a virtualenv using your preferred method (mkvirtualenv, venv, etc...)
-- `pip install -r requirements.txt`
+- `pip install -r requirements-dev.txt`
 - Write code AND tests
 - `pytest` to test run your tests
 - `ptw -n` if you want `pytest` to automatically be called whenever

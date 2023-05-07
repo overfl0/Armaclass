@@ -1,4 +1,0 @@
-Cython~=3.0b
-pytest
-pytest-watch
-twine
