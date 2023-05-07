@@ -33,6 +33,7 @@ def _common_test_(python, sqf):
 def test_string_generation(python, sqf):
     _common_test_(python, sqf)
 
+
 @pytest.mark.parametrize('python, sqf', [
     ({'var': 12.3}, 'var=12.3;'),
     ({'var': -12.3}, 'var=-12.3;'),
