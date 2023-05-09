@@ -18,21 +18,27 @@ else:
                                PyUnicode_KIND, PyUnicode_READ,
                                vector)
 
-# QUOTE: cython.Py_UCS4 = '"'
-# SEMICOLON: cython.Py_UCS4 = ';'
-# COLON = ':'
-# EQUALS = '='
-# CURLY_OPEN = '{'
-# CURLY_CLOSE: cython.Py_UCS4 = '}'
-# SQUARE_OPEN = '['
-# SQUARE_CLOSE = ']'
-# COMMA: cython.Py_UCS4 = ','
-# PLUS = '+'
-# MINUS = '-'
-# SLASH: cython.Py_UCS4 = '/'
-# DOLLAR = '$'
-# ASTERISK = '*'
-#
+QUOTE = '"'
+SEMICOLON = ';'
+COLON = ':'
+EQUALS = '='
+CURLY_OPEN = '{'
+CURLY_CLOSE = '}'
+SQUARE_OPEN = '['
+SQUARE_CLOSE = ']'
+COMMA = ','
+PLUS = '+'
+MINUS = '-'
+SLASH = '/'
+DOLLAR = '$'
+ASTERISK = '*'
+NEWLINE = '\n'
+
+NEWLINE_U = '\n'
+END_COMMENT_U = '*/'
+QUOTE_U = '"'
+STR = 'STR'
+
 # VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
 
@@ -68,18 +74,18 @@ class Parser:
         if self.currentPosition >= self.input_string_len:
             return
 
-        if PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == '/':
+        if PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == SLASH:
             if self.currentPosition + 1 >= self.input_string_len:
                 return
 
-            if PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == '/':
-                indexOfLinefeed = self.input_string.find('\n', self.currentPosition)
+            if PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == SLASH:
+                indexOfLinefeed = self.input_string.find(NEWLINE_U, self.currentPosition)
                 if indexOfLinefeed == -1:
                     self.currentPosition = self.input_string_len
                 else:
                     self.currentPosition = indexOfLinefeed
-            elif PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == '*':
-                indexCommentEnd = self.input_string.find('*/', self.currentPosition)
+            elif PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == ASTERISK:
+                indexCommentEnd = self.input_string.find(END_COMMENT_U, self.currentPosition)
                 self.currentPosition = self.input_string_len if indexCommentEnd == -1 else indexCommentEnd + 2
 
     @cython.cfunc
@@ -110,8 +116,8 @@ class Parser:
     @cython.exceptval(check=False)
     def weHaveADoubleQuote(self) -> cython.bint:
         if self.input_string_len >= self.currentPosition + 2 and \
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == '"' and \
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == '"':
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == QUOTE and \
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == QUOTE:
             return True
         return False
 
@@ -121,12 +127,12 @@ class Parser:
     def weHaveAStringLineBreak(self) -> cython.bint:
         if (
                 self.input_string_len >= self.currentPosition + 6 and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == '"' and
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == QUOTE and
                 PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == ' ' and
                 PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 2) == '\\' and
                 PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 3) == 'n' and
                 PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 4) == ' ' and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 5) == '"'
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 5) == QUOTE
         ):
             return True
         return False
@@ -135,7 +141,7 @@ class Parser:
     @cython.inline
     @cython.exceptval(check=False)
     def forwardToNextQuote(self) -> cython.void:
-        self.currentPosition = self.input_string.find('"', self.currentPosition + 1)
+        self.currentPosition = self.input_string.find(QUOTE_U, self.currentPosition + 1)
         if self.currentPosition == -1:
             self.currentPosition = self.input_string_len
 
@@ -147,17 +153,17 @@ class Parser:
             result = vector()
         result.reserve(100)
 
-        self.ensure(self.current() == '"')
+        self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
         while True:
             if self.weHaveADoubleQuote():
                 result.push_back(self.current())
                 self.nextWithoutCommentDetection()
             elif self.weHaveAStringLineBreak():
-                result.push_back('\n')
+                result.push_back(NEWLINE)
                 self.next()
                 self.forwardToNextQuote()
-            elif self.current() == '"':
+            elif self.current() == QUOTE:
                 break
             else:
                 if self.currentPosition >= self.input_string_len:
@@ -167,7 +173,7 @@ class Parser:
 
             self.nextWithoutCommentDetection()
 
-        self.ensure(self.current() == '"')
+        self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
         unicode_obj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
         return unicode_obj
@@ -221,11 +227,11 @@ class Parser:
     @cython.cfunc
     def parseNonArrayPropertyValue(self):
         current: cython.Py_UCS4 = self.current()
-        if current == '{':
+        if current == CURLY_OPEN:
             return self.parseArray()
-        elif current == '"':
+        elif current == QUOTE:
             return self.parseString()
-        elif current == '$':
+        elif current == DOLLAR:
             return self.parseTranslationString()
         else:
             return self.parseUnknownExpression()
@@ -254,11 +260,11 @@ class Parser:
     def parseClassValue(self):
         result: dict = {}
 
-        self.ensure(self.current() == '{')
+        self.ensure(self.current() == CURLY_OPEN)
         self.next()
         self.parseWhitespace()
 
-        while(self.current() != '}'):
+        while(self.current() != CURLY_CLOSE):
             self.parseProperty(result)
             self.parseWhitespace()
 
@@ -269,15 +275,15 @@ class Parser:
     @cython.cfunc
     def parseArray(self):
         result = []
-        self.ensure(self.current() == '{')
+        self.ensure(self.current() == CURLY_OPEN)
         self.next()
         self.parseWhitespace()
 
-        while self.currentPosition < self.input_string_len and self.current() != '}':
+        while self.currentPosition < self.input_string_len and self.current() != CURLY_CLOSE:
             result.append(self.parseNonArrayPropertyValue())
             self.parseWhitespace()
 
-            if self.current() == ',':
+            if self.current() == COMMA:
                 self.next()
                 self.parseWhitespace()
             else:
@@ -315,7 +321,7 @@ class Parser:
             name = self.parsePropertyName()
             self.parseWhitespace()
 
-            if self.current() == ':':
+            if self.current() == COLON:
                 self.next()
                 self.parseWhitespace()
                 self.parsePropertyName()
@@ -324,44 +330,44 @@ class Parser:
         elif name == 'delete':
             self.parsePropertyName()
             self.parseWhitespace()
-            self.ensure(self.current() == ';')
+            self.ensure(self.current() == SEMICOLON)
             self.next()
             return
 
         elif name == 'import':
             self.parsePropertyName()
             self.parseWhitespace()
-            self.ensure(self.current() == ';')
+            self.ensure(self.current() == SEMICOLON)
             self.next()
             return
 
         current = self.current()
 
-        if current == '[':
-            self.ensure(self.next() == ']')
+        if current == SQUARE_OPEN:
+            self.ensure(self.next() == SQUARE_CLOSE)
             self.next()
             self.parseWhitespace()
 
-            self.ensure(self.current() == '=' or self.current() == '+')
-            if self.current() == '+':
-                self.ensure(self.next() == '=')
+            self.ensure(self.current() == EQUALS or self.current() == PLUS)
+            if self.current() == PLUS:
+                self.ensure(self.next() == EQUALS)
 
             self.next()
             self.parseWhitespace()
 
             value = self.parseArray()
 
-        elif current == '=':
+        elif current == EQUALS:
             self.next()
             self.parseWhitespace()
             value = self.parseNonArrayPropertyValue()
 
-        elif current == '{':
+        elif current == CURLY_OPEN:
             value = self.parseClassValue()
 
-        elif current == '/':
-            if self.next() == '/':
-                self.currentPosition = self.input_string.find('\n', self.currentPosition)
+        elif current == SLASH:
+            if self.next() == SLASH:
+                self.currentPosition = self.input_string.find(NEWLINE_U, self.currentPosition)
                 if self.currentPosition == -1:
                     self.currentPosition = self.input_string_len
 
@@ -374,7 +380,7 @@ class Parser:
         context[name] = value
 
         self.parseWhitespace()
-        self.ensure(self.current() == ';')
+        self.ensure(self.current() == SEMICOLON)
         self.next()
 
     @cython.cfunc
@@ -387,10 +393,10 @@ class Parser:
     @cython.cfunc
     def parseTranslationString(self):
         result = []
-        assert self.current() == '$'
+        assert self.current() == DOLLAR
         self.next()
 
-        if self.input_string[self.currentPosition: self.currentPosition + 3] != 'STR':
+        if self.input_string[self.currentPosition: self.currentPosition + 3] != STR:
             raise ParseError('Invalid translation string beginning')
 
         while self.currentPosition < self.input_string_len:

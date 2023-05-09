@@ -1,0 +1,20 @@
+cdef Py_UCS4 QUOTE
+cdef Py_UCS4 SEMICOLON
+cdef Py_UCS4 COLON
+cdef Py_UCS4 EQUALS
+cdef Py_UCS4 CURLY_OPEN
+cdef Py_UCS4 CURLY_CLOSE
+cdef Py_UCS4 SQUARE_OPEN
+cdef Py_UCS4 SQUARE_CLOSE
+cdef Py_UCS4 COMMA
+cdef Py_UCS4 PLUS
+cdef Py_UCS4 MINUS
+cdef Py_UCS4 SLASH
+cdef Py_UCS4 DOLLAR
+cdef Py_UCS4 ASTERISK
+cdef Py_UCS4 NEWLINE
+
+cdef unicode NEWLINE_U
+cdef unicode END_COMMENT_U
+cdef unicode QUOTE_U
+cdef unicode STR
