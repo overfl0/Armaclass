@@ -1,8 +1,6 @@
 from . import Shadow as cython
 
 PyUnicode_4BYTE_KIND = None
-cython.cast = lambda type_, value: value
-
 
 def PyUnicode_KIND(data):
     return None

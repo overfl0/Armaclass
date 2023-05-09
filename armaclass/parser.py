@@ -157,7 +157,7 @@ class Parser:
                 result.push_back('\n')
                 self.next()
                 self.forwardToNextQuote()
-            elif self.current() == cython.cast(cython.Py_UCS4, '"'):
+            elif self.current() == '"':
                 break
             else:
                 if self.currentPosition >= self.input_string_len:
