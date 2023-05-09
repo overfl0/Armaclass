@@ -1,3 +1,5 @@
+# distutils: language=c++
+
 try:
     import cython
 except ModuleNotFoundError:

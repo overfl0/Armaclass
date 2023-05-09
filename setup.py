@@ -25,7 +25,6 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and \
         ext_modules = cythonize(
             os.path.join('armaclass', 'parser.py'),
             language_level=3,
-            language='c++',
             compiler_directives=compiler_directives,
         )
 
