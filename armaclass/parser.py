@@ -241,10 +241,12 @@ class Parser:
         start: cython.Py_ssize_t = self.currentPosition
         stop: cython.Py_ssize_t = self.currentPosition + 1
 
-        self.next()
+        self.nextWithoutCommentDetection()
         while self.currentPosition < self.input_string_len and self.isValidVarnameChar(self.current()):
             stop += 1
-            self.next()
+            self.nextWithoutCommentDetection()
+
+        self.detectComment()
 
         return self.input_string[start:stop]
 
