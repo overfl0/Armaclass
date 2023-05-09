@@ -18,26 +18,26 @@ else:
                                PyUnicode_KIND, PyUnicode_READ,
                                vector)
 
-QUOTE = '"'
-SEMICOLON = ';'
-COLON = ':'
-EQUALS = '='
-CURLY_OPEN = '{'
-CURLY_CLOSE = '}'
-SQUARE_OPEN = '['
-SQUARE_CLOSE = ']'
-COMMA = ','
-PLUS = '+'
-MINUS = '-'
-SLASH = '/'
-DOLLAR = '$'
-ASTERISK = '*'
-NEWLINE = '\n'
+QUOTE = ord('"')
+SEMICOLON = ord(';')
+COLON = ord(':')
+EQUALS = ord('=')
+CURLY_OPEN = ord('{')
+CURLY_CLOSE = ord('}')
+SQUARE_OPEN = ord('[')
+SQUARE_CLOSE = ord(']')
+COMMA = ord(',')
+PLUS = ord('+')
+MINUS = ord('-')
+SLASH = ord('/')
+DOLLAR = ord('$')
+ASTERISK = ord('*')
+NEWLINE = ord('\n')
 
-NEWLINE_U = '\n'
-END_COMMENT_U = '*/'
-QUOTE_U = '"'
-STR = 'STR'
+NEWLINE_U = b'\n'
+END_COMMENT_U = b'*/'
+QUOTE_U = b'"'
+STR = b'STR'
 
 # VALID_NAME_CHAR = string.ascii_letters + string.digits + '_.\\'
 
@@ -128,10 +128,10 @@ class Parser:
         if (
                 self.input_string_len >= self.currentPosition + 6 and
                 PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == QUOTE and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == ' ' and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 2) == '\\' and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 3) == 'n' and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 4) == ' ' and
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == ord(' ') and
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 2) == ord('\\') and
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 3) == ord('n') and
+                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 4) == ord(' ') and
                 PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 5) == QUOTE
         ):
             return True
@@ -176,7 +176,7 @@ class Parser:
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
         unicode_obj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
-        return unicode_obj
+        return unicode_obj.decode('utf-8', errors='surrogateescape')
 
     @cython.cfunc
     @cython.exceptval(check=False)
@@ -185,22 +185,22 @@ class Parser:
         s = s.strip()
         slen = len(s)
 
-        if slen == 4 and s.lower() == 'true':
+        if slen == 4 and s.lower() == b'true':
             return True
-        elif slen == 5 and s.lower() == 'false':
+        elif slen == 5 and s.lower() == b'false':
             return False
-        elif s.startswith('0x'):
+        elif s.startswith(b'0x'):
             return int(s, 16)
-        elif '.' in s:
+        elif b'.' in s:
             try:
                 return float(s)
             except ValueError:
-                return s
+                return s.decode('utf-8', errors='surrogateescape')
         else:
             try:
                 return int(s)
             except ValueError:
-                return s
+                return s.decode('utf-8', errors='surrogateescape')
 
     @cython.cfunc
     @cython.exceptval(check=False)
@@ -214,7 +214,7 @@ class Parser:
                 self.ensure(pos < self.input_string_len)  # Just to make it fail
 
             c = PyUnicode_READ(self.data_kind, self.data, pos)
-            if c in ';},':
+            if c in b';},':
                 break
 
             pos += 1
@@ -240,7 +240,7 @@ class Parser:
     @cython.inline
     @cython.exceptval(check=False)
     def isValidVarnameChar(self, c: cython.Py_UCS4) -> cython.bint:
-        return c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
+        return c in b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     @cython.cfunc
     def parsePropertyName(self) -> cython.unicode:
@@ -308,7 +308,7 @@ class Parser:
             return False
 
         c = PyUnicode_READ(self.data_kind, self.data, self.currentPosition)
-        return c in ' \t\r\n' or ord(c) < 32
+        return c in b' \t\r\n' or c < 32
 
     @cython.cfunc
     def parseProperty(self, context: dict) -> cython.void:
@@ -317,7 +317,7 @@ class Parser:
 
         self.parseWhitespace()
 
-        if name == 'class':
+        if name == b'class':
             name = self.parsePropertyName()
             self.parseWhitespace()
 
@@ -327,14 +327,14 @@ class Parser:
                 self.parsePropertyName()
                 self.parseWhitespace()
 
-        elif name == 'delete':
+        elif name == b'delete':
             self.parsePropertyName()
             self.parseWhitespace()
             self.ensure(self.current() == SEMICOLON)
             self.next()
             return
 
-        elif name == 'import':
+        elif name == b'import':
             self.parsePropertyName()
             self.parseWhitespace()
             self.ensure(self.current() == SEMICOLON)
@@ -377,7 +377,7 @@ class Parser:
         else:
             raise ParseError('Unexpected value at pos {}'.format(self.currentPosition))
 
-        context[name] = value
+        context[name.decode('utf-8', errors='surrogateescape')] = value
 
         self.parseWhitespace()
         self.ensure(self.current() == SEMICOLON)
@@ -401,7 +401,7 @@ class Parser:
 
         while self.currentPosition < self.input_string_len:
             current: cython.Py_UCS4 = self.current()
-            if current in ';,}':
+            if current in b';,}':
                 break
             else:
                 if self.isWhitespace():
@@ -411,10 +411,10 @@ class Parser:
                     result.append(current)
             self.nextWithoutCommentDetection()
 
-        if self.currentPosition >= self.input_string_len or self.current() not in ';,}':
+        if self.currentPosition >= self.input_string_len or self.current() not in b';,}':
             raise ParseError('Syntax error next translation string')
 
-        return self.translateString(''.join(result))
+        return self.translateString(bytes(result).decode('utf-8', errors='surrogateescape'))
 
     def parse(self, raw, translations):
         self.currentPosition = 0
@@ -438,4 +438,6 @@ class Parser:
 
 def parse(raw, *, translations=None):
     p = Parser()
+    if not isinstance(raw, bytes):
+        return p.parse(raw.encode('utf-8', errors='surrogateescape'), translations)
     return p.parse(raw, translations)

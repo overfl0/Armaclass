@@ -26,7 +26,7 @@ class vector:
         self._data.append(elem)
 
     def data(self):
-        return ''.join(self._data)
+        return bytes(self._data)
 
     def size(self):
         return len(self._data)
