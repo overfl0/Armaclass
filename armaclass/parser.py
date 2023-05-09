@@ -160,8 +160,7 @@ class Parser:
             elif self.current() == cython.cast(cython.Py_UCS4, '"'):
                 break
             else:
-                tmp: cython.Py_UCS4 = self.current()
-                if tmp == cython.cast(cython.Py_UCS4, -1):
+                if self.currentPosition >= self.input_string_len:
                     raise ParseError('Got EOF while parsing a string')
 
                 result.push_back(self.current())
@@ -235,15 +234,17 @@ class Parser:
     @cython.inline
     @cython.exceptval(check=False)
     def isValidVarnameChar(self, c: cython.Py_UCS4) -> cython.bint:
-        return c != cython.cast(cython.Py_UCS4, -1) and c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
+        return c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     @cython.cfunc
     def parsePropertyName(self) -> cython.unicode:
         start: cython.Py_ssize_t = self.currentPosition
         stop: cython.Py_ssize_t = self.currentPosition + 1
 
-        while self.isValidVarnameChar(self.next()):
+        self.next()
+        while self.currentPosition < self.input_string_len and self.isValidVarnameChar(self.current()):
             stop += 1
+            self.next()
 
         return self.input_string[start:stop]
 
@@ -270,7 +271,7 @@ class Parser:
         self.next()
         self.parseWhitespace()
 
-        while self.current() != cython.cast(cython.Py_UCS4, -1) and self.current() != '}':
+        while self.currentPosition < self.input_string_len and self.current() != '}':
             result.append(self.parseNonArrayPropertyValue())
             self.parseWhitespace()
 
@@ -390,7 +391,7 @@ class Parser:
         if self.input_string[self.currentPosition: self.currentPosition + 3] != 'STR':
             raise ParseError('Invalid translation string beginning')
 
-        while self.current() != cython.cast(cython.Py_UCS4, -1):
+        while self.currentPosition < self.input_string_len:
             current: cython.Py_UCS4 = self.current()
             if current in ';,}':
                 break
@@ -402,7 +403,7 @@ class Parser:
                     result.append(current)
             self.nextWithoutCommentDetection()
 
-        if self.current() == cython.cast(cython.Py_UCS4, -1) or self.current() not in ';,}':
+        if self.currentPosition >= self.input_string_len or self.current() not in ';,}':
             raise ParseError('Syntax error next translation string')
 
         return self.translateString(''.join(result))
@@ -420,7 +421,7 @@ class Parser:
 
         self.detectComment()
         self.parseWhitespace()
-        while self.current() != cython.cast(cython.Py_UCS4, -1):
+        while self.currentPosition < self.input_string_len:
             self.parseProperty(result)
             self.parseWhitespace()
 
