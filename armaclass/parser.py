@@ -4,18 +4,15 @@ try:
     import cython
 except ModuleNotFoundError:
     from .cython_stubs import (cython,
-                               PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
-                               PyUnicode_KIND, PyUnicode_READ,
+                               PyBytes_GET_SIZE, PyBytes_AS_STRING, PyBytes_AsString, PyUnicode_DecodeUTF8,
                                vector)
 
 if cython.compiled:
-    from cython.cimports.cpython import (PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
-                                         PyUnicode_KIND, PyUnicode_READ)
+    from cython.cimports.cpython import PyBytes_GET_SIZE, PyBytes_AS_STRING, PyBytes_AsString, PyUnicode_DecodeUTF8
     from cython.cimports.libcpp.vector import vector
 else:
     from .cython_stubs import (cython,
-                               PyUnicode_FromKindAndData, PyUnicode_4BYTE_KIND, PyUnicode_DATA,
-                               PyUnicode_KIND, PyUnicode_READ,
+                               PyBytes_GET_SIZE, PyBytes_AS_STRING, PyBytes_AsString, PyUnicode_DecodeUTF8,
                                vector)
 
 QUOTE = ord('"')
@@ -49,12 +46,9 @@ class ParseError(RuntimeError):
 @cython.cclass
 class Parser:
     currentPosition: cython.Py_ssize_t
-    input_string: cython.unicode
+    input_string: cython.p_char
     input_string_len: cython.Py_ssize_t
     translations: dict
-
-    data: cython.p_void
-    data_kind: cython.int
 
     @cython.cfunc
     def ensure(self, condition: cython.bint, message='Error'):
@@ -66,6 +60,8 @@ class Parser:
 
     @cython.cfunc
     @cython.inline
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     @cython.exceptval(check=False)
     def detectComment(self) -> cython.void:
         indexCommentEnd: cython.Py_ssize_t
@@ -74,24 +70,24 @@ class Parser:
         if self.currentPosition >= self.input_string_len:
             return
 
-        if PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == SLASH:
+        if self.input_string[self.currentPosition] == SLASH:
             if self.currentPosition + 1 >= self.input_string_len:
                 return
 
-            if PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == SLASH:
+            if self.input_string[self.currentPosition + 1] == SLASH:
                 indexOfLinefeed = self.input_string.find(NEWLINE_U, self.currentPosition)
                 if indexOfLinefeed == -1:
                     self.currentPosition = self.input_string_len
                 else:
                     self.currentPosition = indexOfLinefeed
-            elif PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == ASTERISK:
+            elif self.input_string[self.currentPosition + 1] == ASTERISK:
                 indexCommentEnd = self.input_string.find(END_COMMENT_U, self.currentPosition)
                 self.currentPosition = self.input_string_len if indexCommentEnd == -1 else indexCommentEnd + 2
 
     @cython.cfunc
     @cython.inline
     @cython.exceptval(check=False)
-    def next(self) -> cython.Py_UCS4:
+    def next(self) -> cython.char:
         self.currentPosition += 1
         self.detectComment()
         return self.current()
@@ -105,19 +101,19 @@ class Parser:
     @cython.cfunc
     @cython.inline
     @cython.exceptval(check=False)
-    def current(self) -> cython.Py_UCS4:
+    def current(self) -> cython.char:
         if self.currentPosition >= self.input_string_len:
             return -1
 
-        return PyUnicode_READ(self.data_kind, self.data, self.currentPosition)
+        return self.input_string[self.currentPosition]
 
     @cython.cfunc
     @cython.inline
     @cython.exceptval(check=False)
     def weHaveADoubleQuote(self) -> cython.bint:
         if self.input_string_len >= self.currentPosition + 2 and \
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == QUOTE and \
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == QUOTE:
+                self.input_string[self.currentPosition] == QUOTE and \
+                self.input_string[self.currentPosition + 1] == QUOTE:
             return True
         return False
 
@@ -127,12 +123,12 @@ class Parser:
     def weHaveAStringLineBreak(self) -> cython.bint:
         if (
                 self.input_string_len >= self.currentPosition + 6 and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition) == QUOTE and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 1) == ord(' ') and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 2) == ord('\\') and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 3) == ord('n') and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 4) == ord(' ') and
-                PyUnicode_READ(self.data_kind, self.data, self.currentPosition + 5) == QUOTE
+                self.input_string[self.currentPosition] == QUOTE and
+                self.input_string[self.currentPosition + 1] == ord(' ') and
+                self.input_string[self.currentPosition + 2] == ord('\\') and
+                self.input_string[self.currentPosition + 3] == ord('n') and
+                self.input_string[self.currentPosition + 4] == ord(' ') and
+                self.input_string[self.currentPosition + 5] == QUOTE
         ):
             return True
         return False
@@ -148,7 +144,7 @@ class Parser:
     @cython.cfunc
     @cython.inline
     def parseString(self) -> cython.unicode:
-        result: vector[cython.Py_UCS4]# = vector[cython.Py_UCS4]()
+        result: vector[cython.char]
         if not cython.compiled:
             result = vector()
         result.reserve(100)
@@ -175,12 +171,12 @@ class Parser:
 
         self.ensure(self.current() == QUOTE)
         self.nextWithoutCommentDetection()
-        unicode_obj = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, result.data(), result.size())
-        return unicode_obj.decode('utf-8', errors='surrogateescape')
+
+        return PyUnicode_DecodeUTF8(result.data(), result.size(), 'surrogateescape')
 
     @cython.cfunc
     @cython.exceptval(check=False)
-    def guessExpression(self, s: cython.unicode):
+    def guessExpression(self, s: cython.bytes):
         s_len: cython.Py_ssize_t
         s = s.strip()
         slen = len(s)
@@ -195,25 +191,25 @@ class Parser:
             try:
                 return float(s)
             except ValueError:
-                return s.decode('utf-8', errors='surrogateescape')
+                return PyUnicode_DecodeUTF8(PyBytes_AS_STRING(s), PyBytes_GET_SIZE(s), 'surrogateescape')
         else:
             try:
                 return int(s)
             except ValueError:
-                return s.decode('utf-8', errors='surrogateescape')
+                return PyUnicode_DecodeUTF8(PyBytes_AS_STRING(s), PyBytes_GET_SIZE(s), 'surrogateescape')
 
     @cython.cfunc
     @cython.exceptval(check=False)
     def parseUnknownExpression(self):
         pos: cython.Py_ssize_t
-        c: cython.Py_UCS4
+        c: cython.char
 
         pos = self.currentPosition
         while True:
             if pos >= self.input_string_len:
                 self.ensure(pos < self.input_string_len)  # Just to make it fail
 
-            c = PyUnicode_READ(self.data_kind, self.data, pos)
+            c = self.input_string[pos]
             if c in b';},':
                 break
 
@@ -226,7 +222,7 @@ class Parser:
 
     @cython.cfunc
     def parseNonArrayPropertyValue(self):
-        current: cython.Py_UCS4 = self.current()
+        current: cython.char = self.current()
         if current == CURLY_OPEN:
             return self.parseArray()
         elif current == QUOTE:
@@ -239,11 +235,11 @@ class Parser:
     @cython.cfunc
     @cython.inline
     @cython.exceptval(check=False)
-    def isValidVarnameChar(self, c: cython.Py_UCS4) -> cython.bint:
+    def isValidVarnameChar(self, c: cython.char) -> cython.bint:
         return c in b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
     @cython.cfunc
-    def parsePropertyName(self) -> cython.unicode:
+    def parsePropertyName(self) -> cython.bytes:
         start: cython.Py_ssize_t = self.currentPosition
         stop: cython.Py_ssize_t = self.currentPosition + 1
 
@@ -303,11 +299,11 @@ class Parser:
     @cython.inline
     @cython.exceptval(check=False)
     def isWhitespace(self) -> cython.bint:
-        c: cython.Py_UCS4
+        c: cython.char
         if self.input_string_len <= self.currentPosition:
             return False
 
-        c = PyUnicode_READ(self.data_kind, self.data, self.currentPosition)
+        c = self.input_string[self.currentPosition]
         return c in b' \t\r\n' or c < 32
 
     @cython.cfunc
@@ -377,7 +373,7 @@ class Parser:
         else:
             raise ParseError('Unexpected value at pos {}'.format(self.currentPosition))
 
-        context[name.decode('utf-8', errors='surrogateescape')] = value
+        context[PyUnicode_DecodeUTF8(PyBytes_AS_STRING(name), PyBytes_GET_SIZE(name), 'surrogateescape')] = value
 
         self.parseWhitespace()
         self.ensure(self.current() == SEMICOLON)
@@ -392,7 +388,11 @@ class Parser:
 
     @cython.cfunc
     def parseTranslationString(self):
-        result = []
+        result: vector[cython.char]
+        if not cython.compiled:
+            result = vector()
+        result.reserve(100)
+
         assert self.current() == DOLLAR
         self.next()
 
@@ -400,7 +400,7 @@ class Parser:
             raise ParseError('Invalid translation string beginning')
 
         while self.currentPosition < self.input_string_len:
-            current: cython.Py_UCS4 = self.current()
+            current: cython.char = self.current()
             if current in b';,}':
                 break
             else:
@@ -408,22 +408,19 @@ class Parser:
                     self.parseWhitespace()
                     break
                 else:
-                    result.append(current)
+                    result.push_back(current)
             self.nextWithoutCommentDetection()
 
         if self.currentPosition >= self.input_string_len or self.current() not in b';,}':
             raise ParseError('Syntax error next translation string')
 
-        return self.translateString(bytes(result).decode('utf-8', errors='surrogateescape'))
+        return self.translateString(PyUnicode_DecodeUTF8(result.data(), result.size(), 'surrogateescape'))
 
     def parse(self, raw, translations):
         self.currentPosition = 0
-        self.input_string = raw
+        self.input_string = PyBytes_AsString(raw)  # with error checking
         self.input_string_len = len(raw)
         self.translations = translations or {}
-
-        self.data = PyUnicode_DATA(self.input_string)
-        self.data_kind = PyUnicode_KIND(self.input_string)
 
         result = {}
 

@@ -24,7 +24,8 @@ with open(CONFIG_CPP, 'rb') as f:
     print('Reading file...')
     try:
         contents = f.read()
-        contents_s = contents.decode('utf8', errors='surrogateescape')
+        # contents_s = contents.decode('utf8', errors='surrogateescape')
+        contents_s = contents
 
     except UnicodeDecodeError as ex:
         before = contents[:ex.start]

@@ -1,21 +1,22 @@
 from . import Shadow as cython
 
 PyUnicode_4BYTE_KIND = None
+cython.bytes = bytes
 
-def PyUnicode_KIND(data):
-    return None
-
-
-def PyUnicode_FromKindAndData(kind, data, size):
-    return data[:size]
+def PyBytes_AsString(b):
+    return b
 
 
-def PyUnicode_READ(kind, data, pos):
-    return data[pos]
+def PyBytes_AS_STRING(b):
+    return b
 
 
-def PyUnicode_DATA(data):
-    return data
+def PyBytes_GET_SIZE(b):
+    return len(b)
+
+
+def PyUnicode_DecodeUTF8(data, len, errors):
+    return data.decode('utf-8', errors=errors)
 
 
 class vector:
