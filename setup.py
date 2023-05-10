@@ -23,7 +23,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and \
             compiler_directives['linetrace'] = True
 
         ext_modules = cythonize(
-            os.path.join('armaclass', 'parser.py'),
+            os.path.join('armaclass', 'parser.pyx'),
             language_level=3,
             compiler_directives=compiler_directives,
         )

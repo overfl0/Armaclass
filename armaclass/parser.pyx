@@ -43,14 +43,12 @@ class ParseError(RuntimeError):
     pass
 
 
-@cython.cclass
-class Parser:
+cdef class Parser:
     currentPosition: cython.Py_ssize_t
     input_string: cython.p_char
     input_string_len: cython.Py_ssize_t
     translations: dict
 
-    @cython.cfunc
     def ensure(self, condition: cython.bint, message='Error'):
         if condition:
             return
@@ -58,12 +56,8 @@ class Parser:
         raise ParseError('{} at position {}. Before: {}'.format(
             message, self.currentPosition, self.input_string[self.currentPosition:self.currentPosition + 50]))
 
-    @cython.cfunc
-    @cython.inline
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     @cython.exceptval(check=False)
-    def detectComment(self) -> cython.void:
+    cdef inline void detectComment(self) noexcept:
         indexCommentEnd: cython.Py_ssize_t
         indexOfLinefeed: cython.Py_ssize_t
 
@@ -84,43 +78,33 @@ class Parser:
                 indexCommentEnd = self.input_string.find(END_COMMENT_U, self.currentPosition)
                 self.currentPosition = self.input_string_len if indexCommentEnd == -1 else indexCommentEnd + 2
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def next(self) -> cython.char:
+    cdef inline char next(self) noexcept:
         self.currentPosition += 1
         self.detectComment()
         return self.current()
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def nextWithoutCommentDetection(self) -> cython.void:
+    cdef inline void nextWithoutCommentDetection(self) noexcept:
         self.currentPosition += 1
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def current(self) -> cython.char:
+    cdef inline char current(self) noexcept:
         if self.currentPosition >= self.input_string_len:
             return -1
 
         return self.input_string[self.currentPosition]
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def weHaveADoubleQuote(self) -> cython.bint:
+    cdef inline bint weHaveADoubleQuote(self) noexcept:
         if self.input_string_len >= self.currentPosition + 2 and \
                 self.input_string[self.currentPosition] == QUOTE and \
                 self.input_string[self.currentPosition + 1] == QUOTE:
             return True
         return False
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def weHaveAStringLineBreak(self) -> cython.bint:
+    cdef inline bint weHaveAStringLineBreak(self) noexcept:
         if (
                 self.input_string_len >= self.currentPosition + 6 and
                 self.input_string[self.currentPosition] == QUOTE and
@@ -133,17 +117,13 @@ class Parser:
             return True
         return False
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def forwardToNextQuote(self) -> cython.void:
+    cdef inline void forwardToNextQuote(self) noexcept:
         self.currentPosition = self.input_string.find(QUOTE_U, self.currentPosition + 1)
         if self.currentPosition == -1:
             self.currentPosition = self.input_string_len
 
-    @cython.cfunc
-    @cython.inline
-    def parseString(self) -> cython.unicode:
+    cdef inline unicode parseString(self):
         result: vector[cython.char]
         if not cython.compiled:
             result = vector()
@@ -174,9 +154,8 @@ class Parser:
 
         return PyUnicode_DecodeUTF8(result.data(), result.size(), 'surrogateescape')
 
-    @cython.cfunc
     @cython.exceptval(check=False)
-    def guessExpression(self, s: cython.bytes):
+    cdef guessExpression(self, s: cython.bytes) noexcept:
         s_len: cython.Py_ssize_t
         s = s.strip()
         slen = len(s)
@@ -198,9 +177,8 @@ class Parser:
             except ValueError:
                 return PyUnicode_DecodeUTF8(PyBytes_AS_STRING(s), PyBytes_GET_SIZE(s), 'surrogateescape')
 
-    @cython.cfunc
     @cython.exceptval(check=False)
-    def parseUnknownExpression(self):
+    cdef parseUnknownExpression(self) noexcept:
         pos: cython.Py_ssize_t
         c: cython.char
 
@@ -221,7 +199,7 @@ class Parser:
         return self.guessExpression(expression)
 
     @cython.cfunc
-    def parseNonArrayPropertyValue(self):
+    cdef parseNonArrayPropertyValue(self):
         current: cython.char = self.current()
         if current == CURLY_OPEN:
             return self.parseArray()
@@ -232,14 +210,11 @@ class Parser:
         else:
             return self.parseUnknownExpression()
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def isValidVarnameChar(self, c: cython.char) -> cython.bint:
+    cdef inline bint isValidVarnameChar(self, c: cython.char) noexcept:
         return c in b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.\\'
 
-    @cython.cfunc
-    def parsePropertyName(self) -> cython.bytes:
+    cdef bytes parsePropertyName(self):
         start: cython.Py_ssize_t = self.currentPosition
         stop: cython.Py_ssize_t = self.currentPosition + 1
 
@@ -252,8 +227,7 @@ class Parser:
 
         return self.input_string[start:stop]
 
-    @cython.cfunc
-    def parseClassValue(self):
+    cdef parseClassValue(self):
         result: dict = {}
 
         self.ensure(self.current() == CURLY_OPEN)
@@ -268,8 +242,7 @@ class Parser:
 
         return result
 
-    @cython.cfunc
-    def parseArray(self):
+    cdef parseArray(self):
         result = []
         self.ensure(self.current() == CURLY_OPEN)
         self.next()
@@ -288,17 +261,13 @@ class Parser:
         self.next()
         return result
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def parseWhitespace(self) -> cython.void:
+    cdef inline void parseWhitespace(self) noexcept:
         while self.isWhitespace():
             self.next()
 
-    @cython.cfunc
-    @cython.inline
     @cython.exceptval(check=False)
-    def isWhitespace(self) -> cython.bint:
+    cdef inline bint isWhitespace(self) noexcept:
         c: cython.char
         if self.input_string_len <= self.currentPosition:
             return False
@@ -306,8 +275,7 @@ class Parser:
         c = self.input_string[self.currentPosition]
         return c in b' \t\r\n' or c < 32
 
-    @cython.cfunc
-    def parseProperty(self, context: dict) -> cython.void:
+    cdef void parseProperty(self, context: dict):
         value = None
         name = self.parsePropertyName()
 
@@ -380,14 +348,14 @@ class Parser:
         self.next()
 
     @cython.cfunc
-    def translateString(self, txt: str) -> str:
+    cdef str translateString(self, txt: str):
         translated: str = self.translations.get(txt)
         if translated is not None:
             return translated
         return txt
 
     @cython.cfunc
-    def parseTranslationString(self):
+    cdef parseTranslationString(self):
         result: vector[cython.char]
         if not cython.compiled:
             result = vector()
