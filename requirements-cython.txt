@@ -1,1 +1,1 @@
-Cython~=3.0b
+Cython~=3.0
