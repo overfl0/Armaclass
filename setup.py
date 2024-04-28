@@ -1,13 +1,13 @@
 import os
 import platform
 import sys
+from pathlib import Path
 
 from setuptools import setup
 
 # read the contents of your README file
-this_directory = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+this_directory = Path(__file__).parent
+long_description = (this_directory / 'README.md').read_text(encoding='utf-8')
 
 ext_modules = None
 if not any(arg in sys.argv for arg in ['clean', 'check']) and \
@@ -23,7 +23,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and \
             compiler_directives['linetrace'] = True
 
         ext_modules = cythonize(
-            os.path.join('armaclass', 'parser.py'),
+            str(this_directory / 'armaclass' / 'parser.py'),
             language_level=3,
             compiler_directives=compiler_directives,
         )

@@ -1,12 +1,16 @@
-import glob
 import os
 import subprocess
-from itertools import chain
+from pathlib import Path
 
-armaclass_path = 'armaclass'
+armaclass_path = Path('armaclass')
 types = ('*.html', '*.c', '*.cpp', '*.pyd', '*.so')
-files_to_delete = chain(*(glob.glob(os.path.join(armaclass_path, file_type)) for file_type in types))
+
+files_to_delete = []
+for file_type in types:
+    files_to_delete.extend(armaclass_path.glob(file_type))
+
 for file_path in files_to_delete:
+    print('Deleting', file_path)
     os.remove(file_path)
 
 subprocess.run('python setup_cython.py build_ext --inplace --force', shell=True, check=True)

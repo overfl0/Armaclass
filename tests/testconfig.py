@@ -1,6 +1,5 @@
 import json
 import lzma
-import os
 import sys
 import time
 from itertools import zip_longest
@@ -9,7 +8,7 @@ from pathlib import Path
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir.parent))
 
-import armaclass
+import armaclass  # noqa
 
 CONFIG_CPP = current_dir / 'config_data' / 'config.cpp'
 CONFIG_JSON = current_dir / 'config_data' / 'config.json'
@@ -44,7 +43,7 @@ with open(CONFIG_CPP, 'rb') as f:
         raise
 
 
-import pstats, cProfile
+import pstats, cProfile  # noqa
 
 # import pyximport
 # pyximport.install()
@@ -127,6 +126,7 @@ def compare_lists_equal(model, current, path=''):
         elif item_model != item_current:
             error = f'{path}[{i}] == {item_current} instead of {item_model}'
             raise ValueError(error)
+
 
 # COMPARE HERE
 compare_dicts_equal(model, parsed)

@@ -1,10 +1,12 @@
-import os
+from pathlib import Path
 
-from setuptools import setup
 from Cython.Build import cythonize
+from setuptools import setup
+
+this_directory = Path(__file__).parent
 
 setup(
-    ext_modules=cythonize(os.path.join('armaclass', 'parser.py'),
+    ext_modules=cythonize(str(this_directory / 'armaclass' / 'parser.py'),
                           language_level=3,
                           annotate=True,
                           ),
