@@ -11,4 +11,4 @@ for file_path in files_to_delete:
 
 subprocess.run('python setup_cython.py build_ext --inplace --force', shell=True, check=True)
 subprocess.run('pytest -x -s', shell=True, check=True)
-subprocess.run('python testconfig.py', shell=True, check=True)
+subprocess.run('python tests/testconfig.py', shell=True, check=True)

@@ -27,7 +27,7 @@ jobs:
         run: pytest
 
       - name: Run performance test
-        run: python testconfig.py
+        run: python tests/testconfig.py
 
   make_sdist:
     needs: test
