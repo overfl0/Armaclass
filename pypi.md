@@ -6,5 +6,6 @@ Checklist to push a release to PyPi:
 * git push
 * git push --tag
 * python setup.py sdist
-* twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-* twine upload dist/something
+* python setup.py bdist_wheel --universal
+* twine upload --repository armaclass_test dist/*
+* twine upload --repository armaclass dist/*
