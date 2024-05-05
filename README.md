@@ -2,6 +2,8 @@
 
 [![Build Status](https://github.com/overfl0/Armaclass/actions/workflows/build.yml/badge.svg)](https://github.com/overfl0/Armaclass/actions/workflows/build.yml)
 
+[Live demo in your browser](https://overfl0.github.io/Armaclass/)
+
 ## About
 This is a Python parser for Arma 3 class definitions such as those appearing inside unrapified mission files.
 
@@ -11,6 +13,8 @@ JavaScript.
 I grew tired of using it in conjunction with PyExecJS (complicated to set up and needing to patch things up on
 Windows) and py2js (too slow to parse even 300KB sqm files) and decided to port the original JavaScript code to
 Python.
+
+[See how it works, directly in your browser!](https://overfl0.github.io/Armaclass/)
 
 ## Installation
 
