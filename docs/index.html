@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Armaclass Live Demo</title>
+  <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+  <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css"/>
+
+  <style>
+    body {
+      background-color: #eee;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: minmax(550px, auto) 100px;
+      /*grid-auto-rows: minmax(400px, auto);*/
+      grid-gap: 1em;
+      margin-top: 1em;
+    }
+    .container > textarea:first-child {
+      grid-row: 1/3;
+      border: none;
+      outline: none;
+      font-family: monospace;
+    }
+    .container > div > textarea {
+      border: none;
+      outline: none;
+      width: 100%;
+      height: calc(100% - 3em);
+    }
+    .container > div, .container > textarea {
+      background-color: #fff;
+      box-shadow: 0px 5px 10px #ccc;
+      padding: 10px;
+    }
+    .container > div > textarea, .container > div > div {
+      font-family: monospace;
+    }
+    .invalid {
+      background-color: #ffe9e8;
+      border: solid;
+      border-color: #f0625f;
+      color: #9d041c;
+    }
+  </style>
+  <py-config>
+    packages = ["armaclass"]
+  </py-config>
+  <py-script>
+def input_changed():
+    import js
+    import armaclass
+    import json
+
+    input_obj = js.document.getElementById("input")
+    output_obj = js.document.getElementById("output")
+    errors_obj = js.document.getElementById("errors")
+    value = input_obj.value
+
+    try:
+        parsed = armaclass.parse(value)
+        output_text = json.dumps(parsed, indent=4)
+    except Exception as exc:
+        output_obj.textContent = ""
+        errors_obj.textContent = str(exc)
+        errors_obj.className = "invalid"
+    else:
+        output_obj.textContent = output_text
+        errors_obj.textContent = ""
+        errors_obj.className = ""
+  </py-script>
+</head>
+<body>
+  <div class="container">
+    <textarea id="input" type="text" py-input="input_changed()" py-change="input_changed()">
+version=12;
+
+class Moo
+{
+        value=1;
+};
+</textarea>
+    <div>
+      <b>Output</b><hr>
+      <textarea id="output" disabled></textarea>
+    </div>
+    <div>
+      <b>Errors</b><hr>
+      <div id="errors"></div>
+    </div>
+  </div>
+</body>
+<py-script>
+    input_changed()
+</py-script>
+</html>

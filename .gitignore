@@ -1,7 +1,7 @@
 *.pyc
 *.c
 *.cpp
-*.html
+armaclass/*.html
 *.pyd
 *.so
 *.prof
