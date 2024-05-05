@@ -1,21 +1,25 @@
 import json
 import lzma
-import os
+import sys
 import time
 from itertools import zip_longest
+from pathlib import Path
 
-import armaclass
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir.parent))
 
-CONFIG_CPP = os.path.join('config_data', 'config.cpp')
-CONFIG_JSON = os.path.join('config_data', 'config.json')
+import armaclass  # noqa
 
-if not os.path.exists(CONFIG_CPP):
-    data = lzma.open(CONFIG_CPP + '.xz').read()
+CONFIG_CPP = current_dir / 'config_data' / 'config.cpp'
+CONFIG_JSON = current_dir / 'config_data' / 'config.json'
+
+if not CONFIG_CPP.exists():
+    data = lzma.open(str(CONFIG_CPP) + '.xz').read()
     with open(CONFIG_CPP, 'wb') as f:
         f.write(data)
 
-if not os.path.exists(CONFIG_JSON):
-    data = lzma.open(CONFIG_JSON + '.xz').read()
+if not CONFIG_JSON.exists():
+    data = lzma.open(str(CONFIG_JSON) + '.xz').read()
     with open(CONFIG_JSON, 'wb') as f:
         f.write(data)
 
@@ -39,7 +43,7 @@ with open(CONFIG_CPP, 'rb') as f:
         raise
 
 
-import pstats, cProfile
+import pstats, cProfile  # noqa
 
 # import pyximport
 # pyximport.install()
@@ -122,6 +126,7 @@ def compare_lists_equal(model, current, path=''):
         elif item_model != item_current:
             error = f'{path}[{i}] == {item_current} instead of {item_model}'
             raise ValueError(error)
+
 
 # COMPARE HERE
 compare_dicts_equal(model, parsed)

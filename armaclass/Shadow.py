@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 # Possible version formats: "3.1.0", "3.1.0a1", "3.1.0a1.dev0"
-__version__ = "3.0.0b2"
+__version__ = "3.0.10"
 
 try:
     from __builtin__ import basestring
@@ -110,21 +110,34 @@ cclass = ccall = cfunc = _EmptyDecoratorAndManager()
 
 annotation_typing = returns = wraparound = boundscheck = initializedcheck = \
     nonecheck = embedsignature = cdivision = cdivision_warnings = \
-    always_allows_keywords = profile = linetrace = infer_types = \
-    unraisable_tracebacks = freelist = \
+    always_allow_keywords = profile = linetrace = infer_types = \
+    unraisable_tracebacks = freelist = auto_pickle = cpow = trashcan = \
+    auto_cpdef = c_api_binop_methods = \
+    allow_none_for_extension_args = callspec = show_performance_hints = \
+    cpp_locals = py2_import = iterable_coroutine = remove_unreachable = \
         lambda _: _EmptyDecoratorAndManager()
+
+# Note that fast_getattr is untested and undocumented!
+fast_getattr = lambda _: _EmptyDecoratorAndManager()
 
 exceptval = lambda _=None, check=True: _EmptyDecoratorAndManager()
 
 overflowcheck = lambda _: _EmptyDecoratorAndManager()
 optimize = _Optimization()
 
-overflowcheck.fold = optimize.use_switch = \
+
+embedsignature.format = overflowcheck.fold = optimize.use_switch = \
     optimize.unpack_method_calls = lambda arg: _EmptyDecoratorAndManager()
 
-final = internal = type_version_tag = no_gc_clear = no_gc = total_ordering = _empty_decorator
+final = internal = type_version_tag = no_gc_clear = no_gc = total_ordering = \
+    ufunc = _empty_decorator
 
 binding = lambda _: _empty_decorator
+
+class warn:
+    undeclared = unreachable = maybe_uninitialized = unused = \
+        unused_arg = unused_result = \
+            lambda _: _EmptyDecoratorAndManager()
 
 
 _cython_inline = None
@@ -216,6 +229,7 @@ class _nogil(object):
 
 nogil = _nogil()
 gil = _nogil()
+with_gil = _nogil()  # Actually not a context manager, but compilation will give the right error.
 del _nogil
 
 
@@ -437,6 +451,8 @@ int_types = [
     'Py_hash_t',
     'Py_ssize_t',
     'size_t',
+    'ssize_t',
+    'ptrdiff_t',
 ]
 float_types = [
     'longdouble',
@@ -477,7 +493,7 @@ del builtins
 for name in int_types:
     reprname = to_repr(name, name)
     gs[name] = typedef(py_int, reprname)
-    if name not in ('Py_UNICODE', 'Py_UCS4') and not name.endswith('size_t'):
+    if name not in ('Py_UNICODE', 'Py_UCS4', 'Py_hash_t', 'ptrdiff_t') and not name.endswith('size_t'):
         gs['u'+name] = typedef(py_int, "unsigned " + reprname)
         gs['s'+name] = typedef(py_int, "signed " + reprname)
 
@@ -491,9 +507,18 @@ bint = typedef(bool, "bint")
 void = typedef(None, "void")
 Py_tss_t = typedef(None, "Py_tss_t")
 
-for t in int_types + float_types + complex_types + other_types:
+for t in int_types:
     for i in range(1, 4):
         gs["%s_%s" % ('p'*i, t)] = gs[t]._pointer(i)
+        if 'u'+t in gs:
+            gs["%s_u%s" % ('p'*i, t)] = gs['u'+t]._pointer(i)
+            gs["%s_s%s" % ('p'*i, t)] = gs['s'+t]._pointer(i)
+
+for t in float_types + complex_types + other_types:
+    for i in range(1, 4):
+        gs["%s_%s" % ('p'*i, t)] = gs[t]._pointer(i)
+
+del t, i
 
 NULL = gs['p_void'](0)
 
@@ -550,7 +575,6 @@ class CythonDotImportedFromElsewhere(object):
         sys.modules['cython.%s' % self.__name__] = mod
         return getattr(mod, attr)
 
-
 class CythonCImports(object):
     """
     Simplistic module mock to make cimports sort-of work in Python code.
@@ -564,7 +588,14 @@ class CythonCImports(object):
     def __getattr__(self, item):
         if item.startswith('__') and item.endswith('__'):
             raise AttributeError(item)
-        return __import__(item)
+        try:
+            return __import__(item)
+        except ImportError:
+            import sys
+            ex = AttributeError(item)
+            if sys.version_info >= (3, 0):
+                ex.__cause__ = None
+            raise ex
 
 
 import math, sys
