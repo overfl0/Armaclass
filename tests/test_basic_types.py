@@ -1,6 +1,6 @@
 import pytest
 
-from armaclass import parse
+from armaclass import parse, ParseError
 
 
 def test_empty():
@@ -76,6 +76,18 @@ def test_class():
     result = parse('class var {};')
     assert result == expected
     assert type(result['var']) == dict
+
+
+def test_class_no_braces():
+    expected = {'var': {}}
+    result = parse('class var ;')
+    assert result == expected
+    assert type(result['var']) == dict
+
+
+def test_class_no_class_keyword_fails():
+    with pytest.raises(ParseError):
+        parse('var {};')  # Was incorrectly parsing this as `class var {};`
 
 
 def test_empty_array():

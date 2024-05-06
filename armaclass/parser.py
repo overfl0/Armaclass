@@ -317,6 +317,22 @@ class Parser:
 
         self.parseWhitespace()
 
+        if name == 'delete':
+            self.parsePropertyName()
+            self.parseWhitespace()
+            self.ensure(self.current() == SEMICOLON)
+            self.next()
+            return
+
+        if name == 'import':
+            self.parsePropertyName()
+            self.parseWhitespace()
+            self.ensure(self.current() == SEMICOLON)
+            self.next()
+            return
+
+        current = self.current()
+
         if name == 'class':
             name = self.parsePropertyName()
             self.parseWhitespace()
@@ -327,23 +343,13 @@ class Parser:
                 self.parsePropertyName()
                 self.parseWhitespace()
 
-        elif name == 'delete':
-            self.parsePropertyName()
-            self.parseWhitespace()
-            self.ensure(self.current() == SEMICOLON)
-            self.next()
-            return
+            current = self.current()
+            if current == CURLY_OPEN:
+                value = self.parseClassValue()
+            elif current == SEMICOLON:
+                value = {}
 
-        elif name == 'import':
-            self.parsePropertyName()
-            self.parseWhitespace()
-            self.ensure(self.current() == SEMICOLON)
-            self.next()
-            return
-
-        current = self.current()
-
-        if current == SQUARE_OPEN:
+        elif current == SQUARE_OPEN:
             self.ensure(self.next() == SQUARE_CLOSE)
             self.next()
             self.parseWhitespace()
@@ -361,9 +367,6 @@ class Parser:
             self.next()
             self.parseWhitespace()
             value = self.parseNonArrayPropertyValue()
-
-        elif current == CURLY_OPEN:
-            value = self.parseClassValue()
 
         elif current == SLASH:
             if self.next() == SLASH:
