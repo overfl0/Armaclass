@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,37 +41,36 @@
     }
     .invalid {
       background-color: #ffe9e8;
-      border: solid;
-      border-color: #f0625f;
-      color: #9d041c;
+        border: solid #f0625f;
+        color: #9d041c;
     }
   </style>
   <py-config>
     packages = ["armaclass"]
   </py-config>
-  <py-script>
-def input_changed():
-    import js
-    import armaclass
-    import json
+    <py-script>
+      def input_changed():
+          import js
+          import armaclass
+          import json
 
-    input_obj = js.document.getElementById("input")
-    output_obj = js.document.getElementById("output")
-    errors_obj = js.document.getElementById("errors")
-    value = input_obj.value
+          input_obj = js.document.getElementById("input")
+          output_obj = js.document.getElementById("output")
+          errors_obj = js.document.getElementById("errors")
+          value = input_obj.value
 
-    try:
-        parsed = armaclass.parse(value)
-        output_text = json.dumps(parsed, indent=4)
-    except Exception as exc:
-        output_obj.textContent = ""
-        errors_obj.textContent = str(exc)
-        errors_obj.className = "invalid"
-    else:
-        output_obj.textContent = output_text
-        errors_obj.textContent = ""
-        errors_obj.className = ""
-  </py-script>
+          try:
+              parsed = armaclass.parse(value)
+              output_text = json.dumps(parsed, indent=4)
+          except Exception as exc:
+              output_obj.textContent = ""
+              errors_obj.textContent = str(exc)
+              errors_obj.className = "invalid"
+          else:
+              output_obj.textContent = output_text
+              errors_obj.textContent = ""
+              errors_obj.className = ""
+    </py-script>
 </head>
 <body>
   <div class="container">
