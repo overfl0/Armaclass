@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Armaclass Live Demo</title>
-  <script defer src="https://pyscript.net/latest/pyscript.js"></script>
-  <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css"/>
+  <script defer type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.11.1/core.css"/>
 
   <style>
     body {
@@ -49,7 +49,7 @@
     packages = ["armaclass"]
   </py-config>
     <py-script>
-      def input_changed():
+      def input_changed(something):
           import js
           import armaclass
           import json
@@ -74,7 +74,7 @@
 </head>
 <body>
   <div class="container">
-    <textarea id="input" type="text" py-input="input_changed()" py-change="input_changed()">
+    <textarea id="input" type="text" py-input="input_changed" py-change="input_changed">
 version=12;
 
 class Moo
@@ -93,6 +93,6 @@ class Moo
   </div>
 </body>
 <py-script>
-    input_changed()
+    input_changed(None)
 </py-script>
 </html>
