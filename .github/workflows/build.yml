@@ -84,7 +84,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BEFORE_BUILD: pip install -r requirements-cython.txt
+          CIBW_BEFORE_BUILD: pip install -r requirements-cython.txt && pip install setuptools wheel
           CIBW_SKIP: pp*
           CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: pytest {project}
